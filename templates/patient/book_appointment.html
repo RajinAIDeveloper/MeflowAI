@@ -1,0 +1,205 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Book with Dr. {{ doctor.user.get_full_name }} — MediFlow AI{% endblock %}
+
+{% block content %}
+<a href="{% url 'patient:doctor_detail' doctor.pk %}" class="inline-flex items-center gap-2 text-label-lg text-neutral-40 hover:text-primary transition-colors mb-6">
+  <span class="material-symbols-rounded" style="font-size:18px;">arrow_back</span>
+  Back to profile
+</a>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  {# ── Doctor summary ── #}
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6 sticky top-28">
+      <div class="flex items-center gap-4 mb-5">
+        <div class="w-14 h-14 rounded-2xl bg-primary-light flex items-center justify-center shrink-0">
+          {% if doctor.user.avatar %}
+          <img src="{{ doctor.user.avatar.url }}" alt="" class="w-14 h-14 rounded-2xl object-cover" />
+          {% else %}
+          <span class="material-symbols-rounded filled text-primary" style="font-size:28px;">person</span>
+          {% endif %}
+        </div>
+        <div>
+          <p class="font-headline text-title-lg text-neutral-10 font-semibold">Dr. {{ doctor.user.get_full_name }}</p>
+          <p class="text-label-lg text-neutral-50">{{ doctor.specialty.name }}</p>
+        </div>
+      </div>
+      <div class="space-y-2 text-body-md text-neutral-40">
+        {% if doctor.hospital %}<p><span class="font-medium text-neutral-20">Hospital:</span> {{ doctor.hospital }}</p>{% endif %}
+        <p><span class="font-medium text-neutral-20">Fee:</span> ${{ doctor.consultation_fee }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Booking form ── #}
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h1 class="font-headline text-headline-sm text-neutral-10 mb-6">Book Appointment</h1>
+
+      <form id="booking-form" novalidate class="space-y-5">
+        <input type="hidden" id="doctor-id" value="{{ doctor.pk }}" />
+
+        {# Appointment type #}
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-2">Appointment type</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="type-option">
+              <input type="radio" name="appointment_type" value="in_person" class="sr-only" checked />
+              <div class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-neutral-80 cursor-pointer hover:border-primary transition-colors">
+                <span class="material-symbols-rounded filled text-neutral-40" style="font-size:22px;">location_on</span>
+                <span class="text-label-lg text-neutral-20 font-medium">In-person</span>
+              </div>
+            </label>
+            <label class="type-option">
+              <input type="radio" name="appointment_type" value="virtual" class="sr-only" />
+              <div class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-neutral-80 cursor-pointer hover:border-primary transition-colors">
+                <span class="material-symbols-rounded filled text-neutral-40" style="font-size:22px;">video_call</span>
+                <span class="text-label-lg text-neutral-20 font-medium">Virtual</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {# Date & time #}
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="appt-date" class="block text-label-lg text-neutral-20 mb-1.5">Date</label>
+            <input id="appt-date" name="date" type="date"
+                   min="{{ today_str }}"
+                   class="w-full px-4 py-2.5 rounded-xl border border-neutral-80 bg-white text-body-md text-neutral-10
+                          focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" />
+          </div>
+          <div>
+            <label for="appt-time" class="block text-label-lg text-neutral-20 mb-1.5">Time</label>
+            <select id="appt-time" name="time"
+                    class="w-full px-4 py-2.5 rounded-xl border border-neutral-80 bg-white text-body-md text-neutral-10
+                           focus:outline-none focus:border-primary transition-colors">
+              <option value="">Select date first</option>
+            </select>
+          </div>
+        </div>
+
+        {# Reason #}
+        <div>
+          <label for="reason" class="block text-label-lg text-neutral-20 mb-1.5">Reason for visit</label>
+          <input id="reason" name="reason" type="text" required
+                 placeholder="Brief description of your concern…"
+                 class="w-full px-4 py-2.5 rounded-xl border border-neutral-80 bg-white text-body-md text-neutral-10
+                        focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" />
+        </div>
+
+        {# Notes #}
+        <div>
+          <label for="notes" class="block text-label-lg text-neutral-20 mb-1.5">
+            Additional notes <span class="text-neutral-50">(optional)</span>
+          </label>
+          <textarea id="notes" name="notes" rows="3"
+                    placeholder="Any additional information for the doctor…"
+                    class="w-full px-4 py-2.5 rounded-xl border border-neutral-80 bg-white text-body-md text-neutral-10
+                           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"></textarea>
+        </div>
+
+        <p class="form-error hidden px-4 py-3 rounded-xl bg-error-light text-error text-body-md" id="form-error"></p>
+
+        <button type="submit" id="submit-btn"
+                class="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-xl font-semibold text-label-lg hover:bg-primary-dark transition-colors">
+          <span id="btn-label" class="flex items-center gap-2">
+            <span class="material-symbols-rounded filled" style="font-size:18px;">calendar_add_on</span>
+            Confirm Booking
+          </span>
+          <span id="btn-spinner" class="hidden">
+            <span class="material-symbols-rounded animate-spin" style="font-size:20px;">progress_activity</span>
+          </span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+  const dateInput = document.getElementById('appt-date');
+  const timeSelect = document.getElementById('appt-time');
+  const doctorId = document.getElementById('doctor-id').value;
+
+  // Style selected radio
+  document.querySelectorAll('.type-option input[type=radio]').forEach(radio => {
+    const border = radio.nextElementSibling;
+    if (radio.checked) border.classList.replace('border-neutral-80', 'border-primary');
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.type-option input[type=radio]').forEach(r => {
+        r.nextElementSibling.classList.replace('border-primary', 'border-neutral-80');
+      });
+      border.classList.replace('border-neutral-80', 'border-primary');
+    });
+  });
+
+  dateInput.addEventListener('change', async () => {
+    const date = dateInput.value;
+    if (!date) return;
+    timeSelect.innerHTML = '<option>Loading…</option>';
+    try {
+      const res  = await API.get(`/api/doctors/${doctorId}/schedule/?date=${date}`);
+      const data = await res.json();
+      if (res.ok && data.available_slots?.length) {
+        timeSelect.innerHTML = data.available_slots.map(s =>
+          `<option value="${s}">${s}</option>`
+        ).join('');
+      } else {
+        timeSelect.innerHTML = '<option value="">No slots available</option>';
+      }
+    } catch {
+      timeSelect.innerHTML = '<option value="">Error loading slots</option>';
+    }
+  });
+
+  document.getElementById('booking-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn     = document.getElementById('submit-btn');
+    const label   = document.getElementById('btn-label');
+    const spinner = document.getElementById('btn-spinner');
+    const formErr = document.getElementById('form-error');
+
+    const date = dateInput.value;
+    const time = timeSelect.value;
+    const reason = document.getElementById('reason').value.trim();
+    const type = document.querySelector('input[name=appointment_type]:checked').value;
+    const notes = document.getElementById('notes').value.trim();
+
+    if (!date || !time || !reason) {
+      formErr.textContent = 'Please fill in date, time, and reason.';
+      formErr.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true; label.classList.add('hidden'); spinner.classList.remove('hidden');
+    formErr.classList.add('hidden');
+
+    try {
+      const res = await API.post('/api/appointments/book/', {
+        doctor: doctorId,
+        scheduled_at: `${date}T${time}:00`,
+        appointment_type: type,
+        reason,
+        patient_notes: notes,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        window.location.href = '{% url "patient:appointments" %}?booked=1';
+      } else {
+        const msg = data.detail || Object.values(data)[0]?.[0] || 'Booking failed.';
+        formErr.textContent = msg;
+        formErr.classList.remove('hidden');
+      }
+    } catch {
+      formErr.textContent = 'Network error. Please try again.';
+      formErr.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; label.classList.remove('hidden'); spinner.classList.add('hidden');
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Admin Dashboard — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Admin Dashboard</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Platform overview and management.</p>
+</div>
+
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <a href="{% url 'staff:patients' %}" class="bg-white rounded-2xl border border-neutral-90 p-5 hover:shadow-elevation-1 transition-shadow">
+    <div class="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-primary" style="font-size:22px;">groups</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.patients }}</p>
+    <p class="text-label-md text-neutral-50">Patients</p>
+  </a>
+  <a href="{% url 'staff:doctors' %}" class="bg-white rounded-2xl border border-neutral-90 p-5 hover:shadow-elevation-1 transition-shadow">
+    <div class="w-10 h-10 rounded-xl bg-secondary-light flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-secondary-dark" style="font-size:22px;">stethoscope</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.doctors }}</p>
+    <p class="text-label-md text-neutral-50">Doctors</p>
+  </a>
+  <a href="{% url 'staff:appointments' %}" class="bg-white rounded-2xl border border-neutral-90 p-5 hover:shadow-elevation-1 transition-shadow">
+    <div class="w-10 h-10 rounded-xl bg-tertiary-light flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-tertiary" style="font-size:22px;">calendar_month</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.appointments }}</p>
+    <p class="text-label-md text-neutral-50">Total appointments</p>
+  </a>
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <div class="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-yellow-700" style="font-size:22px;">event_upcoming</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.upcoming }}</p>
+    <p class="text-label-md text-neutral-50">Upcoming</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+ 
+  <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden">
+    <div class="px-6 py-4 border-b border-neutral-90 flex items-center justify-between">
+      <h2 class="font-headline text-title-lg text-neutral-10">Recent Appointments</h2>
+      <a href="{% url 'staff:appointments' %}" class="text-label-lg text-primary font-semibold hover:underline">All</a>
+    </div>
+    {% if recent_appointments %}
+    <div class="divide-y divide-neutral-90">
+      {% for appt in recent_appointments %}
+      <div class="px-6 py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-body-md text-neutral-10 truncate">{{ appt.patient.get_full_name|default:appt.patient.email }} → Dr. {{ appt.doctor.user.get_full_name }}</p>
+          <p class="text-label-md text-neutral-50">{{ appt.scheduled_at|date:"M j, Y" }} · {{ appt.scheduled_at|time:"g:i A" }}</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-label-md font-semibold capitalize
+              {% if appt.status == 'confirmed' %}bg-secondary-light text-secondary-dark{% elif appt.status == 'pending' %}bg-yellow-100 text-yellow-700{% elif appt.status == 'cancelled' %}bg-error-light text-error{% else %}bg-neutral-90 text-neutral-40{% endif %}">{{ appt.get_status_display }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="px-6 py-8 text-center text-neutral-50 text-body-md">No appointments yet.</p>{% endif %}
+  </div>
+
+  {# Status breakdown + recent users #}
+  <div class="space-y-6">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-4">Appointments by Status</h2>
+      {% for row in status_breakdown %}
+      <div class="flex items-center justify-between py-2 border-b border-neutral-95 last:border-0">
+        <span class="text-body-md text-neutral-20 capitalize">{{ row.status }}</span>
+        <span class="text-body-md font-semibold text-neutral-10">{{ row.n }}</span>
+      </div>
+      {% empty %}<p class="text-neutral-50 text-body-md">No data.</p>{% endfor %}
+    </div>
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-4">Newest Users</h2>
+      {% for u in recent_users %}
+      <div class="flex items-center justify-between py-2 border-b border-neutral-95 last:border-0">
+        <div class="min-w-0"><p class="text-body-md text-neutral-10 truncate">{{ u.get_full_name|default:u.email }}</p><p class="text-label-md text-neutral-50">{{ u.email }}</p></div>
+        <span class="px-2.5 py-1 rounded-full bg-neutral-95 text-neutral-40 text-label-md capitalize">{{ u.role }}</span>
+      </div>
+      {% empty %}<p class="text-neutral-50 text-body-md">No users.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

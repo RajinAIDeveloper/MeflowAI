@@ -1,0 +1,71 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Doctor Dashboard — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Welcome, Dr. {{ request.user.get_full_name|default:request.user.email }}</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Here's what's happening with your practice today.</p>
+</div>
+
+{% if not profile.hospital %}
+<div class="flex items-start gap-3 px-4 py-3 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 mb-6">
+  <span class="material-symbols-rounded filled shrink-0" style="font-size:20px;">info</span>
+  <p class="text-body-md">Your profile is incomplete. <a href="{% url 'doctor:profile' %}" class="font-semibold underline">Complete it</a> so patients can find and book you.</p>
+</div>
+{% endif %}
+
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <div class="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-primary" style="font-size:22px;">today</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.today }}</p>
+    <p class="text-label-md text-neutral-50">Today's appointments</p>
+  </div>
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <div class="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-yellow-700" style="font-size:22px;">pending</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.pending }}</p>
+    <p class="text-label-md text-neutral-50">Pending requests</p>
+  </div>
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <div class="w-10 h-10 rounded-xl bg-secondary-light flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-secondary-dark" style="font-size:22px;">event_upcoming</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.upcoming }}</p>
+    <p class="text-label-md text-neutral-50">Upcoming total</p>
+  </div>
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <div class="w-10 h-10 rounded-xl bg-tertiary-light flex items-center justify-center mb-3"><span class="material-symbols-rounded filled text-tertiary" style="font-size:22px;">groups</span></div>
+    <p class="text-headline-md font-bold text-neutral-10">{{ stats.patients }}</p>
+    <p class="text-label-md text-neutral-50">Patients seen</p>
+  </div>
+</div>
+
+<div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden mb-6">
+  <div class="px-6 py-4 border-b border-neutral-90 flex items-center justify-between">
+    <h2 class="font-headline text-title-lg text-neutral-10">Today's Schedule</h2>
+    <a href="{% url 'doctor:appointments' %}" class="text-label-lg text-primary font-semibold hover:underline">View all</a>
+  </div>
+  {% if todays_appointments %}
+  <div class="divide-y divide-neutral-90">
+    {% for appt in todays_appointments %}
+    <a href="{% url 'doctor:appointment_detail' appt.pk %}" class="flex items-center gap-4 px-6 py-4 hover:bg-neutral-95 transition-colors">
+      <div class="w-14 text-center shrink-0">
+        <p class="text-title-md font-bold text-primary">{{ appt.scheduled_at|time:"g:i" }}</p>
+        <p class="text-label-md text-neutral-50">{{ appt.scheduled_at|time:"A" }}</p>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-body-md font-semibold text-neutral-10 truncate">{{ appt.patient.get_full_name|default:appt.patient.email }}</p>
+        <p class="text-label-md text-neutral-50 truncate">{{ appt.reason|default:"No reason given"|truncatechars:50 }}</p>
+      </div>
+      <span class="px-3 py-1 rounded-full text-label-md font-semibold capitalize
+            {% if appt.status == 'confirmed' %}bg-secondary-light text-secondary-dark{% elif appt.status == 'pending' %}bg-yellow-100 text-yellow-700{% else %}bg-neutral-90 text-neutral-40{% endif %}">{{ appt.get_status_display }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="px-6 py-12 text-center text-neutral-50">
+    <span class="material-symbols-rounded mb-2" style="font-size:40px;">event_available</span>
+    <p class="text-body-md">No appointments scheduled for today.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

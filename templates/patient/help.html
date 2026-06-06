@@ -1,0 +1,85 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Help Center — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+  <h1 class="font-headline text-headline-md text-neutral-10">Help Center</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Answers to common questions about MediFlow AI.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  
+  <div class="lg:col-span-2 space-y-3">
+    {% for faq in faqs %}
+    <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden">
+      <button class="faq-toggle w-full flex items-center justify-between px-6 py-4 text-left hover:bg-surface transition-colors">
+        <span class="text-label-lg text-neutral-10 font-semibold">{{ faq.question }}</span>
+        <span class="material-symbols-rounded text-neutral-50 shrink-0 transition-transform duration-200">expand_more</span>
+      </button>
+      <div class="faq-answer hidden px-6 pb-5">
+        <p class="text-body-md text-neutral-40 leading-relaxed">{{ faq.answer }}</p>
+      </div>
+    </div>
+    {% empty %}
+    
+    {% for item in default_faqs %}
+    <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden">
+      <button class="faq-toggle w-full flex items-center justify-between px-6 py-4 text-left hover:bg-surface transition-colors">
+        <span class="text-label-lg text-neutral-10 font-semibold">{{ item.0 }}</span>
+        <span class="material-symbols-rounded text-neutral-50 shrink-0 transition-transform duration-200">expand_more</span>
+      </button>
+      <div class="faq-answer hidden px-6 pb-5">
+        <p class="text-body-md text-neutral-40 leading-relaxed">{{ item.1 }}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% endfor %}
+  </div>
+
+
+  <div class="space-y-4">
+    <div class="bg-primary rounded-2xl p-6 text-white">
+      <span class="material-symbols-rounded filled text-white mb-3" style="font-size:32px;">support_agent</span>
+      <h3 class="font-headline text-title-lg font-bold mb-2">Still need help?</h3>
+      <p class="text-white/80 text-body-md mb-4">Our support team is available Mon–Fri, 9 AM–6 PM.</p>
+      <a href="mailto:support@mediflow.ai"
+         class="flex items-center justify-center gap-2 w-full py-2.5 bg-white text-primary rounded-xl font-semibold text-label-lg hover:bg-neutral-95 transition-colors">
+        <span class="material-symbols-rounded filled" style="font-size:18px;">mail</span>
+        Contact support
+      </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-neutral-90 p-5 space-y-4">
+      <h3 class="font-headline text-title-md text-neutral-10 font-semibold">Quick links</h3>
+      <a href="{% url 'patient:triage' %}" class="flex items-center gap-3 py-2 text-body-md text-neutral-20 hover:text-primary transition-colors">
+        <span class="material-symbols-rounded filled text-error" style="font-size:20px;">emergency</span>
+        AI Symptom Triage
+      </a>
+      <a href="{% url 'patient:find_doctor' %}" class="flex items-center gap-3 py-2 text-body-md text-neutral-20 hover:text-primary transition-colors">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:20px;">search</span>
+        Find a Doctor
+      </a>
+      <a href="{% url 'patient:appointments' %}" class="flex items-center gap-3 py-2 text-body-md text-neutral-20 hover:text-primary transition-colors">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:20px;">calendar_month</span>
+        My Appointments
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+  document.querySelectorAll('.faq-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const answer = btn.nextElementSibling;
+      const icon   = btn.querySelector('.material-symbols-rounded');
+      answer.classList.toggle('hidden');
+      icon.style.transform = answer.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    });
+  });
+</script>
+{% endblock %}

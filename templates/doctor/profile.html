@@ -1,0 +1,91 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}My Profile — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">My Profile</h1>
+  <p class="text-body-md text-neutral-50 mt-1">This information is shown to patients searching for a doctor.</p>
+</div>
+
+<form method="post" class="max-w-3xl space-y-4">
+  {% csrf_token %}
+
+
+  <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+    <h2 class="font-headline text-title-lg text-neutral-10 mb-5">Personal Information</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">First name</label>
+        <input type="text" name="first_name" value="{{ request.user.first_name }}" class="doc-input" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Last name</label>
+        <input type="text" name="last_name" value="{{ request.user.last_name }}" class="doc-input" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Phone</label>
+        <input type="tel" name="phone" value="{{ request.user.phone|default:'' }}" class="doc-input" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Email</label>
+        <input type="email" value="{{ request.user.email }}" class="doc-input bg-neutral-95" disabled />
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+    <h2 class="font-headline text-title-lg text-neutral-10 mb-5">Practice Details</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Specialty</label>
+        <select name="specialty" class="doc-input">
+          <option value="">— Select —</option>
+          {% for spec in specialties %}
+          <option value="{{ spec.id }}" {% if profile.specialty_id == spec.id %}selected{% endif %}>{{ spec.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Hospital / Clinic</label>
+        <input type="text" name="hospital" value="{{ profile.hospital }}" class="doc-input" placeholder="City General Hospital" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Location</label>
+        <input type="text" name="location" value="{{ profile.location }}" class="doc-input" placeholder="Floor 3, Cardiology Wing" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Languages</label>
+        <input type="text" name="languages" value="{{ profile.languages }}" class="doc-input" placeholder="English, Spanish" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Years of experience</label>
+        <input type="number" name="years_experience" value="{{ profile.years_experience }}" min="0" class="doc-input" />
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Consultation fee ($)</label>
+        <input type="number" name="consultation_fee" value="{{ profile.consultation_fee }}" min="0" step="0.01" class="doc-input" />
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="block text-label-lg text-neutral-20 mb-1.5">Bio</label>
+      <textarea name="bio" rows="4" class="doc-input resize-none" placeholder="Tell patients about your background and approach…">{{ profile.bio }}</textarea>
+    </div>
+    <label class="flex items-center gap-2 text-label-lg text-neutral-20 mt-4">
+      <input type="checkbox" name="is_available" {% if profile.is_available %}checked{% endif %} class="rounded" />
+      Accepting new appointments
+    </label>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">Save profile</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .doc-input { display:block;width:100%;padding:10px 14px;border:1.5px solid #c4c7c8;border-radius:10px;font-size:.875rem;color:#1a1c1e;background:#fff;outline:none; }
+  .doc-input:focus { border-color:#003c90;box-shadow:0 0 0 3px rgba(0,60,144,.12); }
+</style>
+{% endblock %}

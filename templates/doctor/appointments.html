@@ -1,0 +1,51 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Appointments — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Appointments</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Review, confirm, and manage your patient appointments.</p>
+</div>
+
+
+<div class="flex gap-1 bg-neutral-95 p-1 rounded-xl mb-6 max-w-md">
+  <a href="?tab=upcoming" class="flex-1 text-center py-2 rounded-lg text-label-lg font-medium transition-colors {% if tab == 'upcoming' %}bg-white text-neutral-10 shadow-elevation-1{% else %}text-neutral-50 hover:text-neutral-20{% endif %}">Upcoming</a>
+  <a href="?tab=pending" class="flex-1 text-center py-2 rounded-lg text-label-lg font-medium transition-colors {% if tab == 'pending' %}bg-white text-neutral-10 shadow-elevation-1{% else %}text-neutral-50 hover:text-neutral-20{% endif %}">Pending</a>
+  <a href="?tab=past" class="flex-1 text-center py-2 rounded-lg text-label-lg font-medium transition-colors {% if tab == 'past' %}bg-white text-neutral-10 shadow-elevation-1{% else %}text-neutral-50 hover:text-neutral-20{% endif %}">Past</a>
+</div>
+
+{% if appointments %}
+<div class="space-y-3">
+  {% for appt in appointments %}
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-elevation-1 transition-shadow">
+    <div class="w-16 h-16 rounded-2xl bg-primary-light flex flex-col items-center justify-center shrink-0">
+      <span class="text-[10px] font-bold text-primary uppercase">{{ appt.scheduled_at|date:"M" }}</span>
+      <span class="text-title-lg font-bold text-primary leading-none">{{ appt.scheduled_at|date:"d" }}</span>
+      <span class="text-label-md text-primary">{{ appt.scheduled_at|time:"g:i A" }}</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <h3 class="font-headline text-title-lg text-neutral-10 font-semibold truncate">{{ appt.patient.get_full_name|default:appt.patient.email }}</h3>
+      <p class="text-label-lg text-neutral-50">{{ appt.get_appointment_type_display }} · {{ appt.duration_minutes }} min</p>
+      {% if appt.reason %}<p class="text-label-md text-neutral-50 mt-1 truncate">{{ appt.reason|truncatechars:60 }}</p>{% endif %}
+    </div>
+    <div class="flex flex-col items-end gap-3 shrink-0">
+      <span class="px-3 py-1 rounded-full text-label-md font-semibold capitalize
+            {% if appt.status == 'confirmed' %}bg-secondary-light text-secondary-dark
+            {% elif appt.status == 'pending' %}bg-yellow-100 text-yellow-700
+            {% elif appt.status == 'cancelled' %}bg-error-light text-error
+            {% elif appt.status == 'completed' %}bg-neutral-90 text-neutral-40
+            {% else %}bg-primary-light text-primary{% endif %}">{{ appt.get_status_display }}</span>
+      <a href="{% url 'doctor:appointment_detail' appt.pk %}" class="px-4 py-1.5 rounded-xl border border-neutral-80 text-label-md text-neutral-20 font-medium hover:bg-neutral-95 transition-colors">Manage</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="flex flex-col items-center justify-center py-20 text-center">
+  <span class="material-symbols-rounded text-neutral-80 mb-4" style="font-size:56px;">calendar_month</span>
+  <h3 class="font-headline text-headline-sm text-neutral-10 mb-2">No {{ tab }} appointments</h3>
+  <p class="text-body-md text-neutral-50">Appointments will appear here as patients book with you.</p>
+</div>
+{% endif %}
+{% endblock %}

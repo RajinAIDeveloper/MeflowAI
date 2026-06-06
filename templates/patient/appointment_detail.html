@@ -1,0 +1,133 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Appointment — MediFlow AI{% endblock %}
+
+{% block content %}
+<a href="{% url 'patient:appointments' %}" class="inline-flex items-center gap-2 text-label-lg text-neutral-40 hover:text-primary transition-colors mb-6">
+  <span class="material-symbols-rounded" style="font-size:18px;">arrow_back</span>
+  Back to appointments
+</a>
+
+<div class="max-w-2xl">
+  <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden">
+
+    <div class="px-6 py-5 border-b border-neutral-90 flex items-center justify-between">
+      <div>
+        <h1 class="font-headline text-headline-sm text-neutral-10">Appointment Details</h1>
+        <p class="text-label-md text-neutral-50 mt-0.5">Booking #{{ appointment.pk }}</p>
+      </div>
+      <span class="px-3 py-1 rounded-full text-label-md font-semibold
+                   {% if appointment.status == 'confirmed'  %}bg-secondary-light text-secondary-dark
+                   {% elif appointment.status == 'pending'   %}bg-yellow-100 text-yellow-700
+                   {% elif appointment.status == 'cancelled' %}bg-error-light text-error
+                   {% elif appointment.status == 'completed' %}bg-neutral-90 text-neutral-40
+                   {% else %}bg-primary-light text-primary{% endif %}">
+        {{ appointment.get_status_display }}
+      </span>
+    </div>
+
+    <div class="px-6 py-5 border-b border-neutral-90 flex items-center gap-4">
+      <div class="w-14 h-14 rounded-2xl bg-primary-light flex items-center justify-center shrink-0">
+        {% if appointment.doctor.user.avatar %}
+        <img src="{{ appointment.doctor.user.avatar.url }}" class="w-14 h-14 rounded-2xl object-cover" alt="" />
+        {% else %}
+        <span class="material-symbols-rounded filled text-primary" style="font-size:28px;">person</span>
+        {% endif %}
+      </div>
+      <div>
+        <p class="font-headline text-title-lg text-neutral-10 font-semibold">Dr. {{ appointment.doctor.user.get_full_name }}</p>
+        <p class="text-label-lg text-neutral-50">{{ appointment.doctor.specialty.name }}</p>
+        {% if appointment.doctor.hospital %}
+        <p class="text-label-md text-neutral-50">{{ appointment.doctor.hospital }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+
+    <div class="px-6 py-5 grid grid-cols-2 gap-4 border-b border-neutral-90">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">calendar_month</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Date</p>
+          <p class="text-body-md text-neutral-10 font-medium">{{ appointment.scheduled_at|date:"l, F j, Y" }}</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">schedule</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Time</p>
+          <p class="text-body-md text-neutral-10 font-medium">{{ appointment.scheduled_at|time:"g:i A" }} ({{ appointment.duration_minutes }} min)</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">{% if appointment.appointment_type == 'virtual' %}video_call{% else %}location_on{% endif %}</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Type</p>
+          <p class="text-body-md text-neutral-10 font-medium">{{ appointment.get_appointment_type_display }}</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">payments</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Consultation fee</p>
+          <p class="text-body-md text-neutral-10 font-medium">${{ appointment.doctor.consultation_fee }}</p>
+        </div>
+      </div>
+    </div>
+
+    {% if appointment.reason or appointment.patient_notes %}
+    <div class="px-6 py-5 border-b border-neutral-90 space-y-3">
+      {% if appointment.reason %}
+      <div>
+        <p class="text-label-md text-neutral-50 mb-1">Reason for visit</p>
+        <p class="text-body-md text-neutral-10">{{ appointment.reason }}</p>
+      </div>
+      {% endif %}
+      {% if appointment.patient_notes %}
+      <div>
+        <p class="text-label-md text-neutral-50 mb-1">Your notes</p>
+        <p class="text-body-md text-neutral-40 leading-relaxed">{{ appointment.patient_notes }}</p>
+      </div>
+      {% endif %}
+      {% if appointment.doctor_notes %}
+      <div>
+        <p class="text-label-md text-neutral-50 mb-1">Doctor's notes</p>
+        <p class="text-body-md text-neutral-40 leading-relaxed">{{ appointment.doctor_notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+
+    {% if is_upcoming and appointment.status == 'pending' or is_upcoming and appointment.status == 'confirmed' %}
+    <div class="px-6 py-5 flex gap-3">
+      <a href="{% url 'patient:book_appointment' appointment.doctor.pk %}"
+         class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-neutral-80 text-label-lg text-neutral-20 font-medium hover:bg-neutral-95 transition-colors">
+        <span class="material-symbols-rounded" style="font-size:18px;">edit_calendar</span>
+        Reschedule
+      </a>
+      <button type="button" id="cancel-btn" data-appt-id="{{ appointment.pk }}"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-error/30 bg-error-light text-error text-label-lg font-medium hover:bg-red-100 transition-colors">
+        <span class="material-symbols-rounded" style="font-size:18px;">cancel</span>
+        Cancel appointment
+      </button>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+  document.getElementById('cancel-btn')?.addEventListener('click', async () => {
+    if (!confirm('Cancel this appointment? This action cannot be undone.')) return;
+    const id = document.getElementById('cancel-btn').dataset.apptId;
+    try {
+      const res = await API.post(`/api/appointments/${id}/cancel/`, {});
+      if (res.ok) window.location.href = '{% url "patient:appointments" %}';
+      else alert('Could not cancel. Please try again.');
+    } catch { alert('Network error.'); }
+  });
+</script>
+{% endblock %}

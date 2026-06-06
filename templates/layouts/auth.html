@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="min-h-full flex">
+
+
+  <div class="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-between p-12 relative overflow-hidden">
+
+    <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-10" style="background: #2724b8;"></div>
+    <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full opacity-10" style="background: #006a61;"></div>
+
+
+    <div class="relative z-10 flex items-center gap-3">
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-elevation-2">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:22px;">favorite</span>
+      </div>
+      <span class="font-headline text-title-lg text-white font-bold tracking-tight">MediFlow AI</span>
+    </div>
+
+
+    <div class="relative z-10">
+      <h1 class="font-headline text-display-md text-white mb-6 leading-tight">
+        {% block auth_headline %}Your AI-powered health navigator{% endblock %}
+      </h1>
+      <p class="text-white/80 text-body-lg max-w-sm mb-10">
+        {% block auth_subheading %}Book appointments, get triage guidance, and manage your care — all in one place.{% endblock %}
+      </p>
+
+
+      <div class="flex flex-col gap-3">
+        {% if auth_features %}
+          {% for icon, label in auth_features %}
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+              <span class="material-symbols-rounded filled text-white" style="font-size:16px;">{{ icon }}</span>
+            </div>
+            <span class="text-white/90 text-label-lg">{{ label }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+              <span class="material-symbols-rounded filled text-white" style="font-size:16px;">calendar_month</span>
+            </div>
+            <span class="text-white/90 text-label-lg">Book appointments in seconds</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+              <span class="material-symbols-rounded filled text-white" style="font-size:16px;">smart_toy</span>
+            </div>
+            <span class="text-white/90 text-label-lg">AI-guided symptom triage</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+              <span class="material-symbols-rounded filled text-white" style="font-size:16px;">verified_user</span>
+            </div>
+            <span class="text-white/90 text-label-lg">Your health data, secure</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <p class="relative z-10 text-white/50 text-label-md">© 2026 MediFlow AI. All rights reserved.</p>
+  </div>
+
+
+  <div class="flex-1 flex items-center justify-center p-6 lg:p-12 bg-white">
+    <div class="w-full max-w-md">
+
+
+      <div class="flex lg:hidden items-center gap-2 mb-8">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-rounded filled text-white" style="font-size:18px;">favorite</span>
+        </div>
+        <span class="font-headline text-title-md text-neutral-10 font-bold">MediFlow AI</span>
+      </div>
+
+      {% block auth_form %}{% endblock %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  {# Provide default feature list for auth panels when no context var supplied #}
+  /* No-op — features are rendered server-side via context or template default tag */
+</script>
+{% block auth_js %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}Create Account — MediFlow AI{% endblock %}
+
+{% block auth_headline %}Start your health journey today{% endblock %}
+{% block auth_subheading %}Create a free account to access AI-powered care navigation.{% endblock %}
+
+{% block auth_form %}
+<div>
+  <h2 class="font-headline text-headline-sm text-neutral-10 mb-1">Create account</h2>
+  <p class="text-body-md text-neutral-50 mb-8">Fill in your details to get started.</p>
+
+  <form method="post" novalidate class="space-y-4">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label for="first_name" class="block text-label-lg text-neutral-20 mb-1.5">First name</label>
+        <input id="first_name" name="first_name" type="text" autocomplete="given-name" required
+               value="{{ form.first_name.value|default:'' }}"
+               class="input-field{% if form.first_name.errors %} error{% endif %}" placeholder="Sarah" />
+        {% if form.first_name.errors %}
+        <p class="mt-1 text-label-md text-error">{{ form.first_name.errors.0 }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <label for="last_name" class="block text-label-lg text-neutral-20 mb-1.5">Last name</label>
+        <input id="last_name" name="last_name" type="text" autocomplete="family-name" required
+               value="{{ form.last_name.value|default:'' }}"
+               class="input-field{% if form.last_name.errors %} error{% endif %}" placeholder="Mitchell" />
+        {% if form.last_name.errors %}
+        <p class="mt-1 text-label-md text-error">{{ form.last_name.errors.0 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div>
+      <label for="email" class="block text-label-lg text-neutral-20 mb-1.5">Email address</label>
+      <input id="email" name="email" type="email" autocomplete="email" required
+             value="{{ form.email.value|default:'' }}"
+             class="input-field{% if form.email.errors %} error{% endif %}" placeholder="you@example.com" />
+      {% if form.email.errors %}
+      <p class="mt-1 text-label-md text-error">{{ form.email.errors.0 }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label for="phone" class="block text-label-lg text-neutral-20 mb-1.5">Phone number <span class="text-neutral-50">(optional)</span></label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel"
+             value="{{ form.phone.value|default:'' }}"
+             class="input-field" placeholder="+1 555 000 0000" />
+    </div>
+
+    <div>
+      <label for="date_of_birth" class="block text-label-lg text-neutral-20 mb-1.5">Date of birth <span class="text-neutral-50">(optional)</span></label>
+      <input id="date_of_birth" name="date_of_birth" type="date"
+             value="{{ form.date_of_birth.value|default:'' }}"
+             class="input-field" />
+    </div>
+
+    <div>
+      <label for="password" class="block text-label-lg text-neutral-20 mb-1.5">Password</label>
+      <div class="relative">
+        <input id="password" name="password" type="password" autocomplete="new-password" required
+               class="input-field pr-12{% if form.password.errors %} error{% endif %}" placeholder="Min. 8 characters" />
+        <button type="button" onclick="togglePassword('password', this)"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-50 hover:text-neutral-20">
+          <span class="material-symbols-rounded" style="font-size:20px;">visibility</span>
+        </button>
+      </div>
+      {% if form.password.errors %}
+      <p class="mt-1 text-label-md text-error">{{ form.password.errors.0 }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label for="password2" class="block text-label-lg text-neutral-20 mb-1.5">Confirm password</label>
+      <div class="relative">
+        <input id="password2" name="password2" type="password" autocomplete="new-password" required
+               class="input-field pr-12{% if form.password2.errors %} error{% endif %}" placeholder="Repeat password" />
+        <button type="button" onclick="togglePassword('password2', this)"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-50 hover:text-neutral-20">
+          <span class="material-symbols-rounded" style="font-size:20px;">visibility</span>
+        </button>
+      </div>
+      {% if form.password2.errors %}
+      <p class="mt-1 text-label-md text-error">{{ form.password2.errors.0 }}</p>
+      {% endif %}
+    </div>
+
+    {% if form.non_field_errors %}
+    <p class="px-4 py-3 rounded-xl bg-error-light text-error text-body-md">{{ form.non_field_errors.0 }}</p>
+    {% endif %}
+
+    <button type="submit" class="btn-primary w-full mt-2">
+      Create account
+    </button>
+
+  </form>
+
+  <p class="text-center text-body-md text-neutral-50 mt-8">
+    Already have an account?
+    <a href="{% url 'accounts:login' %}" class="text-primary font-semibold hover:underline">Sign in</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block auth_js %}
+<style>
+  .input-field {
+    display: block; width: 100%; padding: 10px 16px;
+    border: 1.5px solid #c4c7c8; border-radius: 10px;
+    font-size: 0.875rem; color: #1a1c1e; background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s; outline: none;
+  }
+  .input-field:focus { border-color: #003c90; box-shadow: 0 0 0 3px rgba(0,60,144,0.12); }
+  .input-field.error { border-color: #ba1a1a; }
+  .btn-primary {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 24px; border-radius: 12px; border: none;
+    background: #003c90; color: #fff; font-size: 0.875rem; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #002a66; }
+</style>
+<script>
+  function togglePassword(id, btn) {
+    const input = document.getElementById(id);
+    const icon  = btn.querySelector('.material-symbols-rounded');
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    icon.textContent = input.type === 'password' ? 'visibility' : 'visibility_off';
+  }
+
+  // Client-side password match hint (server is source of truth)
+  document.querySelector('form').addEventListener('submit', function() {
+    const p1 = document.getElementById('password').value;
+    const p2 = document.getElementById('password2').value;
+    if (p1 && p2 && p1 !== p2) {
+      document.getElementById('password2').classList.add('error');
+    }
+  });
+</script>
+{% endblock %}

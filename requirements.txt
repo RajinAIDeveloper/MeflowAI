@@ -1,0 +1,41 @@
+# MediFlow AI — consolidated dependencies
+# Install with:  pip install -r requirements.txt
+# (For dev tooling — debug toolbar, pytest, factory-boy — use requirements/dev.txt)
+
+# ── Core web framework ──
+django>=4.2,<5.0
+djangorestframework>=3.15
+djangorestframework-simplejwt>=5.3
+djangorestframework-simplejwt[crypto]>=5.3
+django-cors-headers>=4.3
+
+# ── Database ──
+psycopg2-binary>=2.9
+pgvector>=0.3
+
+# ── Config & media ──
+python-decouple>=3.8
+Pillow>=10.0
+
+# ── LangChain / LangGraph (agents) ──
+langchain>=0.2
+langchain-community>=0.2
+langchain-ollama>=0.1
+langchain-openai>=0.1
+langgraph>=0.1
+
+# ── RAG ──
+llama-index>=0.10
+llama-index-vector-stores-postgres>=0.1
+llama-index-embeddings-huggingface>=0.2
+
+# ── Embeddings (bge-small-en-v1.5, 384 dims) ──
+sentence-transformers>=3.0
+
+# ── Evaluation ──
+ragas>=0.1
+deepeval>=0.21
+
+# ── Task queue ──
+celery>=5.3
+redis>=5.0

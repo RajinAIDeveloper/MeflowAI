@@ -1,0 +1,109 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{% if mode == 'edit' %}Edit Doctor{% else %}Add Doctor{% endif %} — MediFlow AI{% endblock %}
+
+{% block content %}
+<a href="{% url 'staff:doctors' %}" class="inline-flex items-center gap-2 text-label-lg text-neutral-40 hover:text-primary transition-colors mb-6">
+  <span class="material-symbols-rounded" style="font-size:18px;">arrow_back</span> Back to doctors
+</a>
+
+<div class="max-w-3xl">
+  <h1 class="font-headline text-headline-md text-neutral-10 mb-6">{% if mode == 'edit' %}Edit Doctor{% else %}Add a New Doctor{% endif %}</h1>
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+
+
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-5">Account</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">First name</label>
+          <input type="text" name="first_name" required class="adm-input"
+                 value="{% if mode == 'edit' %}{{ doctor.user.first_name }}{% else %}{{ data.first_name }}{% endif %}" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Last name</label>
+          <input type="text" name="last_name" required class="adm-input"
+                 value="{% if mode == 'edit' %}{{ doctor.user.last_name }}{% else %}{{ data.last_name }}{% endif %}" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Email</label>
+          {% if mode == 'edit' %}
+          <input type="email" class="adm-input bg-neutral-95" value="{{ doctor.user.email }}" disabled />
+          {% else %}
+          <input type="email" name="email" required class="adm-input" value="{{ data.email }}" />
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Phone</label>
+          <input type="tel" name="phone" class="adm-input"
+                 value="{% if mode == 'edit' %}{{ doctor.user.phone }}{% else %}{{ data.phone }}{% endif %}" />
+        </div>
+        {% if mode != 'edit' %}
+        <div class="col-span-2">
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Temporary password</label>
+          <input type="text" name="password" required class="adm-input" placeholder="Min. 8 characters" />
+          <p class="mt-1 text-label-md text-neutral-50">The doctor can change this later from their profile.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-5">Practice Details</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Specialty</label>
+          <select name="specialty" class="adm-input">
+            <option value="">— Select —</option>
+            {% for spec in specialties %}
+            <option value="{{ spec.id }}" {% if mode == 'edit' and doctor.specialty_id == spec.id %}selected{% endif %}>{{ spec.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Hospital / Clinic</label>
+          <input type="text" name="hospital" class="adm-input" value="{% if mode == 'edit' %}{{ doctor.hospital }}{% endif %}" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Location</label>
+          <input type="text" name="location" class="adm-input" value="{% if mode == 'edit' %}{{ doctor.location }}{% endif %}" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Languages</label>
+          <input type="text" name="languages" class="adm-input" value="{% if mode == 'edit' %}{{ doctor.languages }}{% else %}English{% endif %}" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Years of experience</label>
+          <input type="number" name="years_experience" min="0" class="adm-input" value="{% if mode == 'edit' %}{{ doctor.years_experience }}{% else %}0{% endif %}" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Consultation fee ($)</label>
+          <input type="number" name="consultation_fee" min="0" step="0.01" class="adm-input" value="{% if mode == 'edit' %}{{ doctor.consultation_fee }}{% else %}0{% endif %}" />
+        </div>
+      </div>
+      <div class="mt-4">
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Bio</label>
+        <textarea name="bio" rows="3" class="adm-input resize-none">{% if mode == 'edit' %}{{ doctor.bio }}{% endif %}</textarea>
+      </div>
+      <label class="flex items-center gap-2 text-label-lg text-neutral-20 mt-4">
+        <input type="checkbox" name="is_available" {% if mode != 'edit' or doctor.is_available %}checked{% endif %} class="rounded" /> Available for bookings
+      </label>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <a href="{% url 'staff:doctors' %}" class="px-6 py-2.5 rounded-xl border border-neutral-80 text-label-lg text-neutral-20 font-medium hover:bg-neutral-95 transition-colors">Cancel</a>
+      <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">{% if mode == 'edit' %}Save changes{% else %}Create doctor{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .adm-input { display:block;width:100%;padding:10px 14px;border:1.5px solid #c4c7c8;border-radius:10px;font-size:.875rem;color:#1a1c1e;background:#fff;outline:none; }
+  .adm-input:focus { border-color:#003c90;box-shadow:0 0 0 3px rgba(0,60,144,.12); }
+</style>
+{% endblock %}

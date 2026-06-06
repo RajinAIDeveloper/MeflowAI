@@ -1,0 +1,252 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}AI Assistant — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-[calc(100vh-5rem-2*24px)] max-h-[820px]">
+
+
+  <div class="flex items-center gap-4 mb-4 shrink-0">
+    <div class="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-elevation-1">
+      <span class="material-symbols-rounded filled text-white" style="font-size:22px;">smart_toy</span>
+    </div>
+    <div>
+      <h1 class="font-headline text-headline-sm text-neutral-10">AI Health Assistant</h1>
+      <div class="flex items-center gap-1.5 mt-0.5">
+        <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+        <span class="text-label-md text-secondary-dark font-medium">Online · Powered by MediFlow AI</span>
+      </div>
+    </div>
+    <button id="clear-chat" class="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral-80 text-label-lg text-neutral-40 hover:bg-neutral-95 transition-colors">
+      <span class="material-symbols-rounded" style="font-size:18px;">delete_sweep</span>
+      Clear chat
+    </button>
+  </div>
+
+
+  <div id="chat-messages" class="flex-1 overflow-y-auto rounded-2xl bg-white border border-neutral-90 p-6 space-y-4 mb-4">
+
+
+    <div class="flex items-start gap-3" id="welcome-msg">
+      <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
+        <span class="material-symbols-rounded filled text-white" style="font-size:16px;">smart_toy</span>
+      </div>
+      <div class="max-w-xl">
+        <div class="bg-surface rounded-2xl rounded-tl-sm px-4 py-3">
+          <p class="text-body-md text-neutral-10">
+            Hi {{ request.user.first_name|default:"there" }}! I'm your MediFlow AI assistant. I can help you:
+          </p>
+          <ul class="mt-2 space-y-1 text-body-md text-neutral-40">
+            <li class="flex items-center gap-2"><span class="material-symbols-rounded text-secondary" style="font-size:16px;">check_circle</span> Assess symptoms and suggest care</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-rounded text-secondary" style="font-size:16px;">check_circle</span> Find the right doctor for your needs</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-rounded text-secondary" style="font-size:16px;">check_circle</span> Book or reschedule appointments</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-rounded text-secondary" style="font-size:16px;">check_circle</span> Answer general health questions</li>
+          </ul>
+          <p class="mt-3 text-body-md text-neutral-10">What can I help you with today?</p>
+        </div>
+        <p class="text-label-md text-neutral-50 mt-1 ml-1">MediFlow AI · just now</p>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="flex flex-wrap gap-2 mb-4 shrink-0" id="chips">
+    {% for chip in suggestion_chips|default:"" %}
+    <button class="chip-btn px-4 py-2 rounded-full border border-neutral-80 bg-white text-label-lg text-neutral-20 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">
+      {{ chip }}
+    </button>
+    {% endfor %}
+    <button class="chip-btn px-4 py-2 rounded-full border border-neutral-80 bg-white text-label-lg text-neutral-20 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">I have a headache and fever</button>
+    <button class="chip-btn px-4 py-2 rounded-full border border-neutral-80 bg-white text-label-lg text-neutral-20 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">Book an appointment</button>
+    <button class="chip-btn px-4 py-2 rounded-full border border-neutral-80 bg-white text-label-lg text-neutral-20 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">Find a cardiologist</button>
+    <button class="chip-btn px-4 py-2 rounded-full border border-neutral-80 bg-white text-label-lg text-neutral-20 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">Cancel my appointment</button>
+  </div>
+
+  <form id="chat-form" class="flex items-end gap-3 shrink-0">
+    <div class="flex-1 relative">
+      <textarea id="chat-input" name="message" rows="1"
+                placeholder="Type your message…"
+                class="w-full resize-none px-5 py-3.5 pr-12 rounded-2xl border border-neutral-80 bg-white text-body-md text-neutral-10 placeholder-neutral-50
+                       focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors
+                       overflow-hidden leading-relaxed"
+                style="max-height: 140px;"></textarea>
+    </div>
+    <button type="submit" id="send-btn"
+            class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-colors shadow-elevation-1 disabled:opacity-50"
+            disabled>
+      <span class="material-symbols-rounded filled" style="font-size:22px;">send</span>
+    </button>
+  </form>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  /* Rendered-markdown styling for assistant bubbles */
+  .md > :first-child { margin-top: 0; }
+  .md > :last-child { margin-bottom: 0; }
+  .md p { margin: 0 0 .5rem; line-height: 1.5; }
+  .md ul, .md ol { margin: .35rem 0; padding-left: 1.3rem; }
+  .md ul { list-style: disc; }
+  .md ol { list-style: decimal; }
+  .md li { margin: .15rem 0; }
+  .md strong { font-weight: 600; }
+  .md em { font-style: italic; }
+  .md code { background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 5px; font-size: .85em; }
+</style>
+<script>
+  // Minimal, safe markdown -> HTML (escapes first, then adds known tags only).
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function mdInline(t) {
+    return t
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+?)`/g, '<code>$1</code>')
+      .replace(/(^|[^*])\*(?!\s)([^*]+?)\*(?!\*)/g, '$1<em>$2</em>');
+  }
+  function renderMarkdown(raw) {
+    const lines = escapeHtml(raw || '').split('\n');
+    let html = '', list = null;
+    const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t) { closeList(); continue; }
+      let m;
+      if ((m = t.match(/^[-*•]\s+(.*)$/))) {
+        if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; }
+        html += `<li>${mdInline(m[1])}</li>`;
+      } else if ((m = t.match(/^(\d+)[.)]\s+(.*)$/))) {
+        if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; }
+        html += `<li>${mdInline(m[2])}</li>`;
+      } else if ((m = t.match(/^#{1,6}\s+(.*)$/))) {
+        closeList(); html += `<p><strong>${mdInline(m[1])}</strong></p>`;
+      } else {
+        closeList(); html += `<p>${mdInline(t)}</p>`;
+      }
+    }
+    closeList();
+    return html;
+  }
+
+  const chatMessages = document.getElementById('chat-messages');
+  const chatInput    = document.getElementById('chat-input');
+  const sendBtn      = document.getElementById('send-btn');
+  const chipsEl      = document.getElementById('chips');
+
+  let history = [];
+
+  // Auto-grow textarea
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+    sendBtn.disabled = chatInput.value.trim().length === 0;
+  });
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      chatInput.value = btn.textContent.trim();
+      chatInput.dispatchEvent(new Event('input'));
+      chipsEl.classList.add('hidden');
+      sendMessage();
+    });
+  });
+
+  document.getElementById('chat-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+
+  document.getElementById('clear-chat').addEventListener('click', () => {
+    history = [];
+    chatMessages.innerHTML = '';
+    chipsEl.classList.remove('hidden');
+  });
+
+  function appendMessage(role, text, time) {
+    const isUser = role === 'user';
+    const wrapper = document.createElement('div');
+    wrapper.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isUser ? 'bg-primary-light' : 'bg-primary'}`;
+    avatar.innerHTML = `<span class="material-symbols-rounded filled ${isUser ? 'text-primary' : 'text-white'}" style="font-size:16px;">${isUser ? 'person' : 'smart_toy'}</span>`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'max-w-xl';
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = isUser
+      ? 'bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-3 text-body-md'
+      : 'bg-surface text-neutral-10 rounded-2xl rounded-tl-sm px-4 py-3 text-body-md md';
+    if (isUser) {
+      msgDiv.textContent = text;            // user input: plain text
+    } else {
+      msgDiv.innerHTML = renderMarkdown(text);  // assistant: render markdown
+    }
+
+    const meta = document.createElement('p');
+    meta.className = `text-label-md text-neutral-50 mt-1 ${isUser ? 'text-right mr-1' : 'ml-1'}`;
+    meta.textContent = `${isUser ? 'You' : 'MediFlow AI'} · ${time || 'just now'}`;
+
+    bubble.append(msgDiv, meta);
+    wrapper.append(avatar, bubble);
+    chatMessages.appendChild(wrapper);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function appendTyping() {
+    const el = document.createElement('div');
+    el.id = 'typing-indicator';
+    el.className = 'flex items-start gap-3';
+    el.innerHTML = `
+      <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+        <span class="material-symbols-rounded filled text-white" style="font-size:16px;">smart_toy</span>
+      </div>
+      <div class="bg-surface rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
+        <span class="w-2 h-2 rounded-full bg-neutral-60 animate-bounce" style="animation-delay:0ms"></span>
+        <span class="w-2 h-2 rounded-full bg-neutral-60 animate-bounce" style="animation-delay:150ms"></span>
+        <span class="w-2 h-2 rounded-full bg-neutral-60 animate-bounce" style="animation-delay:300ms"></span>
+      </div>`;
+    chatMessages.appendChild(el);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    chipsEl.classList.add('hidden');
+    appendMessage('user', text);
+    history.push({ role: 'user', content: text });
+
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    sendBtn.disabled = true;
+    appendTyping();
+
+    try {
+      const res  = await API.post('/api/agents/chat/', { message: text, history });
+      const data = await res.json();
+      document.getElementById('typing-indicator')?.remove();
+
+      if (res.ok) {
+        const reply = data.response || data.message || 'Sorry, I could not process that.';
+        appendMessage('assistant', reply);
+        history.push({ role: 'assistant', content: reply });
+      } else {
+        appendMessage('assistant', 'Something went wrong. Please try again.');
+      }
+    } catch {
+      document.getElementById('typing-indicator')?.remove();
+      appendMessage('assistant', 'Network error. Please check your connection.');
+    }
+  }
+</script>
+{% endblock %}

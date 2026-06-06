@@ -1,0 +1,52 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Patients — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Patients</h1>
+  <p class="text-body-md text-neutral-50 mt-1">{{ paginator.count }} registered</p>
+</div>
+
+<form method="get" class="mb-4 max-w-sm">
+  <input type="search" name="search" value="{{ search }}" placeholder="Search by name or email…"
+         class="w-full px-4 py-2.5 rounded-xl border border-neutral-80 text-body-md focus:outline-none focus:border-primary" />
+</form>
+
+<div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden">
+  {% if patients %}
+  <table class="w-full text-left">
+    <thead class="bg-neutral-95 text-label-md text-neutral-50">
+      <tr>
+        <th class="px-6 py-3 font-medium">Name</th>
+        <th class="px-6 py-3 font-medium">Email</th>
+        <th class="px-6 py-3 font-medium">Phone</th>
+        <th class="px-6 py-3 font-medium">Appointments</th>
+        <th class="px-6 py-3 font-medium">Joined</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-neutral-90">
+      {% for p in patients %}
+      <tr class="hover:bg-neutral-95 transition-colors">
+        <td class="px-6 py-3 text-body-md text-neutral-10 font-medium">{{ p.get_full_name|default:"—" }}</td>
+        <td class="px-6 py-3 text-body-md text-neutral-40">{{ p.email }}</td>
+        <td class="px-6 py-3 text-body-md text-neutral-40">{{ p.phone|default:"—" }}</td>
+        <td class="px-6 py-3 text-body-md text-neutral-40">{{ p.appt_count }}</td>
+        <td class="px-6 py-3 text-body-md text-neutral-40">{{ p.date_joined|date:"M j, Y" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="px-6 py-12 text-center text-neutral-50 text-body-md">No patients found.</p>
+  {% endif %}
+</div>
+
+{% if is_paginated %}
+<div class="flex items-center justify-center gap-2 mt-6">
+  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&search={{ search }}" class="px-4 py-2 rounded-xl border border-neutral-80 text-label-lg hover:bg-neutral-95">Prev</a>{% endif %}
+  <span class="px-4 py-2 text-label-lg text-neutral-40">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&search={{ search }}" class="px-4 py-2 rounded-xl border border-neutral-80 text-label-lg hover:bg-neutral-95">Next</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

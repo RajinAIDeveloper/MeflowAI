@@ -1,0 +1,141 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}My Appointments — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="font-headline text-headline-md text-neutral-10">My Appointments</h1>
+    <p class="text-body-md text-neutral-50 mt-1">Manage your upcoming and past visits.</p>
+  </div>
+  <a href="{% url 'patient:find_doctor' %}"
+     class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+    <span class="material-symbols-rounded filled" style="font-size:18px;">add</span>
+    New appointment
+  </a>
+</div>
+
+{# Success toast after booking #}
+{% if request.GET.booked %}
+<div class="flex items-start gap-3 px-4 py-3 rounded-xl bg-secondary-light border border-secondary/30 text-secondary-dark mb-6">
+  <span class="material-symbols-rounded filled shrink-0" style="font-size:20px;">check_circle</span>
+  <p class="text-body-md">Your appointment has been booked successfully!</p>
+</div>
+{% endif %}
+
+{# ── Tabs ── #}
+<div class="flex gap-1 bg-neutral-95 p-1 rounded-xl mb-6 max-w-xs">
+  <a href="?tab=upcoming"
+     class="flex-1 text-center py-2 rounded-lg text-label-lg font-medium transition-colors
+            {% if tab == 'upcoming' or not tab %}bg-white text-neutral-10 shadow-elevation-1{% else %}text-neutral-50 hover:text-neutral-20{% endif %}">
+    Upcoming
+  </a>
+  <a href="?tab=past"
+     class="flex-1 text-center py-2 rounded-lg text-label-lg font-medium transition-colors
+            {% if tab == 'past' %}bg-white text-neutral-10 shadow-elevation-1{% else %}text-neutral-50 hover:text-neutral-20{% endif %}">
+    Past
+  </a>
+</div>
+
+{# ── Appointment list ── #}
+{% if appointments %}
+<div class="space-y-3">
+  {% for appt in appointments %}
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-elevation-1 transition-shadow">
+
+    {# Date block #}
+    <div class="w-16 h-16 rounded-2xl bg-primary-light flex flex-col items-center justify-center shrink-0">
+      <span class="text-[10px] font-bold text-primary uppercase tracking-wide">{{ appt.scheduled_at|date:"M" }}</span>
+      <span class="text-title-lg font-bold text-primary leading-none">{{ appt.scheduled_at|date:"d" }}</span>
+      <span class="text-label-md text-primary">{{ appt.scheduled_at|date:"Y" }}</span>
+    </div>
+
+    {# Info #}
+    <div class="flex-1 min-w-0">
+      <div class="flex items-start gap-3">
+        <div>
+          <h3 class="font-headline text-title-lg text-neutral-10 font-semibold">
+            Dr. {{ appt.doctor.user.get_full_name }}
+          </h3>
+          <p class="text-label-lg text-neutral-50">{{ appt.doctor.specialty.name }}</p>
+          <div class="flex flex-wrap items-center gap-3 mt-2">
+            <span class="flex items-center gap-1.5 text-label-md text-neutral-50">
+              <span class="material-symbols-rounded" style="font-size:16px;">schedule</span>
+              {{ appt.scheduled_at|time:"g:i A" }} · {{ appt.duration_minutes }} min
+            </span>
+            <span class="flex items-center gap-1.5 text-label-md text-neutral-50">
+              <span class="material-symbols-rounded" style="font-size:16px;">{% if appt.appointment_type == 'virtual' %}video_call{% else %}location_on{% endif %}</span>
+              {{ appt.get_appointment_type_display }}
+            </span>
+            {% if appt.reason %}
+            <span class="flex items-center gap-1.5 text-label-md text-neutral-50">
+              <span class="material-symbols-rounded" style="font-size:16px;">note</span>
+              {{ appt.reason|truncatechars:40 }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Status + actions #}
+    <div class="flex flex-col items-end gap-3 shrink-0">
+      <span class="px-3 py-1 rounded-full text-label-md font-semibold
+                   {% if appt.status == 'confirmed'  %}bg-secondary-light text-secondary-dark
+                   {% elif appt.status == 'pending'   %}bg-yellow-100 text-yellow-700
+                   {% elif appt.status == 'cancelled' %}bg-error-light text-error
+                   {% elif appt.status == 'completed' %}bg-neutral-90 text-neutral-40
+                   {% else %}bg-primary-light text-primary{% endif %}">
+        {{ appt.get_status_display }}
+      </span>
+      <div class="flex gap-2">
+        <a href="{% url 'patient:appointment_detail' appt.pk %}"
+           class="px-4 py-1.5 rounded-xl border border-neutral-80 text-label-md text-neutral-20 font-medium hover:bg-neutral-95 transition-colors">
+          Details
+        </a>
+        {% if tab != 'past' and appt.status == 'pending' or tab != 'past' and appt.status == 'confirmed' %}
+        <button data-appt-id="{{ appt.pk }}" class="cancel-btn px-4 py-1.5 rounded-xl border border-error/30 bg-error-light text-error text-label-md font-medium hover:bg-red-100 transition-colors">
+          Cancel
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="flex flex-col items-center justify-center py-20 text-center">
+  <span class="material-symbols-rounded text-neutral-80 mb-4" style="font-size:56px;">calendar_month</span>
+  <h3 class="font-headline text-headline-sm text-neutral-10 mb-2">
+    No {% if tab == 'past' %}past{% else %}upcoming{% endif %} appointments
+  </h3>
+  <p class="text-body-md text-neutral-50">
+    {% if tab == 'past' %}Your appointment history will appear here.
+    {% else %}Book your first appointment to get started.{% endif %}
+  </p>
+  {% if tab != 'past' %}
+  <a href="{% url 'patient:find_doctor' %}" class="mt-6 px-5 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+    Find a doctor
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block page_js %}
+<script>
+  document.querySelectorAll('.cancel-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Cancel this appointment?')) return;
+      const id = btn.dataset.apptId;
+      try {
+        const res = await API.post(`/api/appointments/${id}/cancel/`, {});
+        if (res.ok) window.location.reload();
+        else alert('Could not cancel appointment. Please try again.');
+      } catch {
+        alert('Network error.');
+      }
+    });
+  });
+</script>
+{% endblock %}

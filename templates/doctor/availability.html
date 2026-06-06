@@ -1,0 +1,91 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Availability — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Availability</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Define weekly time blocks. Patients can book slots within these windows.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  {# Add slot #}
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6 sticky top-28">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-4">Add a slot</h2>
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add" />
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Day of week</label>
+          <select name="day_of_week" required class="avail-input">
+            {% for value, label in days %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">Start</label>
+            <input type="time" name="start_time" required class="avail-input" />
+          </div>
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">End</label>
+            <input type="time" name="end_time" required class="avail-input" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Slot length (minutes)</label>
+          <input type="number" name="slot_duration_minutes" value="30" min="5" step="5" class="avail-input" />
+        </div>
+        <label class="flex items-center gap-2 text-label-lg text-neutral-20">
+          <input type="checkbox" name="is_active" checked class="rounded" /> Active
+        </label>
+        <button type="submit" class="w-full py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">Add slot</button>
+      </form>
+    </div>
+  </div>
+
+  
+  <div class="lg:col-span-2">
+    {% if slots %}
+    <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden divide-y divide-neutral-90">
+      {% for slot in slots %}
+      <div class="flex items-center gap-4 px-6 py-4">
+        <div class="w-28 shrink-0">
+          <p class="text-body-md font-semibold text-neutral-10">{{ slot.get_day_of_week_display }}</p>
+        </div>
+        <div class="flex-1">
+          <p class="text-body-md text-neutral-10">{{ slot.start_time|time:"g:i A" }} – {{ slot.end_time|time:"g:i A" }}</p>
+          <p class="text-label-md text-neutral-50">{{ slot.slot_duration_minutes }} min slots{% if not slot.is_active %} · inactive{% endif %}</p>
+        </div>
+        {% if slot.is_active %}
+        <span class="px-2.5 py-1 rounded-full bg-secondary-light text-secondary-dark text-label-md font-semibold">Active</span>
+        {% else %}
+        <span class="px-2.5 py-1 rounded-full bg-neutral-90 text-neutral-50 text-label-md">Inactive</span>
+        {% endif %}
+        <form method="post" onsubmit="return confirm('Remove this slot?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete" />
+          <input type="hidden" name="slot_id" value="{{ slot.pk }}" />
+          <button type="submit" class="w-9 h-9 rounded-lg text-neutral-50 hover:text-error hover:bg-error-light flex items-center justify-center transition-colors" aria-label="Delete">
+            <span class="material-symbols-rounded" style="font-size:20px;">delete</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-neutral-90 flex flex-col items-center justify-center py-16 text-center">
+      <span class="material-symbols-rounded text-neutral-80 mb-3" style="font-size:48px;">schedule</span>
+      <p class="text-body-md text-neutral-50">No availability slots yet. Add one to start receiving bookings.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .avail-input { display:block;width:100%;padding:10px 14px;border:1.5px solid #c4c7c8;border-radius:10px;font-size:.875rem;color:#1a1c1e;background:#fff;outline:none; }
+  .avail-input:focus { border-color:#003c90;box-shadow:0 0 0 3px rgba(0,60,144,.12); }
+</style>
+{% endblock %}

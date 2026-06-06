@@ -1,0 +1,208 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Triage Index — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Triage Index</h1>
+  <p class="text-body-md text-neutral-50 mt-1">
+    Control what the AI triage assistant knows. Embed doctors so they can be
+    recommended, and review the documents in the knowledge base.
+  </p>
+</div>
+
+
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <p class="text-label-md text-neutral-50">Doctors embedded</p>
+    <p class="font-headline text-headline-md text-neutral-10 mt-1">{{ embedded_count }}<span class="text-title-md text-neutral-50">/{{ doctor_total }}</span></p>
+  </div>
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <p class="text-label-md text-neutral-50">Documents</p>
+    <p class="font-headline text-headline-md text-neutral-10 mt-1">{{ documents|length }}</p>
+  </div>
+  <div class="bg-white rounded-2xl border border-neutral-90 p-5">
+    <p class="text-label-md text-neutral-50">Document chunks</p>
+    <p class="font-headline text-headline-md text-neutral-10 mt-1">{{ doc_chunk_total }}</p>
+  </div>
+</div>
+
+
+<div class="flex items-center justify-between mb-3">
+  <h2 class="font-headline text-title-lg text-neutral-10">Doctors</h2>
+  <form method="post" onsubmit="return confirm('Embed ALL doctors into the triage index?');">
+    {% csrf_token %}
+    <button type="submit" name="action" value="embed_all"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+      <span class="material-symbols-rounded" style="font-size:18px;">bolt</span>Embed all doctors
+    </button>
+  </form>
+</div>
+
+<form method="post" id="doctor-form">
+  {% csrf_token %}
+  <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden">
+    <table class="w-full text-left">
+      <thead class="bg-surface text-label-md text-neutral-50">
+        <tr>
+          <th class="px-4 py-3 w-10"><input type="checkbox" id="select-all" aria-label="Select all" /></th>
+          <th class="px-4 py-3">Doctor</th>
+          <th class="px-4 py-3">Specialty</th>
+          <th class="px-4 py-3">In triage index?</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-neutral-90">
+        {% for d in doctor_rows %}
+        <tr class="hover:bg-surface/50">
+          <td class="px-4 py-3"><input type="checkbox" name="doctor_ids" value="{{ d.pk }}" class="row-check" /></td>
+          <td class="px-4 py-3">
+            <span class="text-body-md font-medium text-neutral-10">{{ d.name }}</span>
+            {% if not d.is_available %}<span class="ml-2 text-label-sm text-neutral-50">(unavailable)</span>{% endif %}
+          </td>
+          <td class="px-4 py-3 text-body-md text-neutral-50">{{ d.specialty }}</td>
+          <td class="px-4 py-3">
+            {% if d.embedded %}
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-light text-secondary-dark text-label-md font-medium">
+                <span class="material-symbols-rounded filled" style="font-size:14px;">check_circle</span>Embedded
+              </span>
+            {% else %}
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-95 text-neutral-50 text-label-md font-medium">
+                <span class="material-symbols-rounded" style="font-size:14px;">radio_button_unchecked</span>Not embedded
+              </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="px-4 py-10 text-center text-neutral-50">No doctors yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="flex items-center gap-3 px-4 py-3 border-t border-neutral-90 bg-surface/40">
+      <button type="submit" name="action" value="embed_selected"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+        <span class="material-symbols-rounded" style="font-size:18px;">add</span>Embed selected
+      </button>
+      <button type="submit" name="action" value="remove_selected"
+              onclick="return confirm('Remove selected doctors from the triage index?');"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-error-light text-error rounded-xl text-label-lg font-semibold hover:bg-red-100 transition-colors">
+        <span class="material-symbols-rounded" style="font-size:18px;">remove</span>Remove selected
+      </button>
+      <span class="text-label-md text-neutral-50 ml-auto" id="sel-count">0 selected</span>
+    </div>
+  </div>
+</form>
+
+
+<div class="mt-10">
+  <h2 class="font-headline text-title-lg text-neutral-10 mb-1">Ingested documents</h2>
+  <p class="text-body-md text-neutral-50 mb-3">
+    Policies, FAQs and guides the triage assistant consults. Add more from the CLI:
+    <code class="px-1.5 py-0.5 rounded bg-neutral-95 text-neutral-20 text-label-md">python manage.py ingest_docs &lt;file|folder&gt; --type medical_faq</code>
+  </p>
+
+
+  <div class="bg-white rounded-2xl border border-neutral-90 p-6 mb-6">
+    <h3 class="font-headline text-title-md text-neutral-10 mb-4 flex items-center gap-2">
+      <span class="material-symbols-rounded text-primary" style="font-size:20px;">add_circle</span>Add a document
+    </h3>
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_document" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Title</label>
+          <input type="text" name="title" class="kb-input" placeholder="e.g. Diabetes Care FAQ" />
+          <p class="text-label-sm text-neutral-50 mt-1">Optional if you upload a file (filename is used).</p>
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Type</label>
+          <select name="doc_type" class="kb-input" aria-label="Document type">
+            {% for value, label in doc_type_choices %}
+            <option value="{{ value }}" {% if value == 'medical_faq' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-label-lg text-neutral-20 mb-1.5">Content</label>
+        <textarea name="content" rows="6" class="kb-input resize-y"
+                  placeholder="Paste the document text here (policies, FAQs, symptom guides...)."></textarea>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral-80 text-label-lg text-neutral-20 cursor-pointer hover:bg-surface transition-colors">
+          <span class="material-symbols-rounded" style="font-size:18px;">upload_file</span>
+          <span id="file-label">Choose file (.txt, .md, .pdf)</span>
+          <input type="file" name="file" accept=".txt,.md,.markdown,.pdf" class="hidden" id="file-input" />
+        </label>
+        <span class="text-label-md text-neutral-50">or paste text above</span>
+        <button type="submit"
+                class="ml-auto inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+          <span class="material-symbols-rounded" style="font-size:18px;">database</span>Add to knowledge base
+        </button>
+      </div>
+      <p class="text-label-sm text-neutral-50">Long documents are chunked automatically. Re-adding the same title updates it.</p>
+    </form>
+  </div>
+
+  {% if documents %}
+  <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden divide-y divide-neutral-90">
+    {% for doc in documents %}
+    <div class="flex items-center gap-4 px-6 py-4">
+      <div class="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:20px;">description</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-body-md font-semibold text-neutral-10 truncate">{{ doc.title }}</p>
+        <p class="text-label-md text-neutral-50 truncate">
+          {{ doc.doc_type_label }} · {{ doc.chunks }} chunk{{ doc.chunks|pluralize }}{% if doc.filename %} · {{ doc.filename }}{% endif %}
+        </p>
+      </div>
+      <form method="post" onsubmit="return confirm('Remove this document from the knowledge base?');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove_document" />
+        <input type="hidden" name="doc_type" value="{{ doc.doc_type }}" />
+        <input type="hidden" name="parent" value="{{ doc.parent }}" />
+        <button type="submit" class="w-9 h-9 rounded-lg text-neutral-50 hover:text-error hover:bg-error-light flex items-center justify-center transition-colors" aria-label="Remove">
+          <span class="material-symbols-rounded" style="font-size:20px;">delete</span>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-neutral-90 flex flex-col items-center justify-center py-16 text-center">
+    <span class="material-symbols-rounded text-neutral-80 mb-3" style="font-size:48px;">folder_open</span>
+    <p class="text-body-md text-neutral-50">No documents ingested yet.</p>
+    <p class="text-label-md text-neutral-50 mt-1">Use the <code>ingest_docs</code> command to add policies, FAQs and guides.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .kb-input { display:block;width:100%;padding:10px 14px;border:1.5px solid #c4c7c8;border-radius:10px;font-size:.875rem;color:#1a1c1e;background:#fff;outline:none; }
+  .kb-input:focus { border-color:#003c90;box-shadow:0 0 0 3px rgba(0,60,144,.12); }
+</style>
+<script>
+  // Doctor multi-select
+  const selectAll = document.getElementById('select-all');
+  const rows = Array.from(document.querySelectorAll('.row-check'));
+  const counter = document.getElementById('sel-count');
+  function refresh() {
+    const n = rows.filter(r => r.checked).length;
+    counter.textContent = n + ' selected';
+    if (selectAll) selectAll.checked = n > 0 && n === rows.length;
+  }
+  if (selectAll) selectAll.addEventListener('change', () => { rows.forEach(r => r.checked = selectAll.checked); refresh(); });
+  rows.forEach(r => r.addEventListener('change', refresh));
+  refresh();
+
+  // Show chosen filename in the upload label
+  const fileInput = document.getElementById('file-input');
+  const fileLabel = document.getElementById('file-label');
+  if (fileInput) fileInput.addEventListener('change', () => {
+    fileLabel.textContent = fileInput.files.length ? fileInput.files[0].name : 'Choose file (.txt, .md, .pdf)';
+  });
+</script>
+{% endblock %}

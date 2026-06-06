@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="min-h-full">
+
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-neutral-90 flex flex-col z-30">
+
+  
+    <div class="h-20 flex items-center px-6 border-b border-neutral-90 shrink-0">
+      <a href="{% if request.user.is_doctor %}{% url 'doctor:dashboard' %}{% elif request.user.is_admin_user %}{% url 'staff:dashboard' %}{% else %}{% url 'patient:dashboard' %}{% endif %}" class="flex items-center gap-3 no-underline">
+        <div class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-elevation-1">
+          <span class="material-symbols-rounded filled text-white" style="font-size:20px;">favorite</span>
+        </div>
+        <span class="font-headline text-title-md text-neutral-10 font-bold leading-tight">MediFlow<br><span class="text-primary">AI</span></span>
+      </a>
+    </div>
+
+
+    <nav class="flex-1 overflow-y-auto px-3 py-4">
+      {% block sidebar_nav %}
+      {% with request.resolver_match.url_name as url_name %}
+
+      {% if request.user.is_doctor %}
+      {# ── Doctor nav ── #}
+      <div class="mb-1">
+        <a href="{% url 'doctor:dashboard' %}" class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'dashboard' %}filled{% endif %}">home</span><span>Dashboard</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'doctor:appointments' %}" class="sidebar-link {% if url_name == 'appointments' or url_name == 'appointment_detail' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'appointments' or url_name == 'appointment_detail' %}filled{% endif %}">calendar_month</span><span>Appointments</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'doctor:availability' %}" class="sidebar-link {% if url_name == 'availability' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'availability' %}filled{% endif %}">schedule</span><span>Availability</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'doctor:profile' %}" class="sidebar-link {% if url_name == 'profile' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'profile' %}filled{% endif %}">person</span><span>My Profile</span>
+        </a>
+      </div>
+
+      {% elif request.user.is_admin_user %}
+  
+      <div class="mb-1">
+        <a href="{% url 'staff:dashboard' %}" class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'dashboard' %}filled{% endif %}">dashboard</span><span>Overview</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'staff:doctors' %}" class="sidebar-link {% if url_name == 'doctors' or url_name == 'doctor_create' or url_name == 'doctor_edit' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'doctors' or url_name == 'doctor_create' or url_name == 'doctor_edit' %}filled{% endif %}">stethoscope</span><span>Doctors</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'staff:patients' %}" class="sidebar-link {% if url_name == 'patients' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'patients' %}filled{% endif %}">groups</span><span>Patients</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'staff:appointments' %}" class="sidebar-link {% if url_name == 'appointments' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'appointments' %}filled{% endif %}">calendar_month</span><span>Appointments</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'staff:specialties' %}" class="sidebar-link {% if url_name == 'specialties' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'specialties' %}filled{% endif %}">medical_services</span><span>Specialties</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'staff:knowledge' %}" class="sidebar-link {% if url_name == 'knowledge' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'knowledge' %}filled{% endif %}">neurology</span><span>Triage Index</span>
+        </a>
+      </div>
+
+      {% else %}
+
+      <div class="mb-1">
+        <a href="{% url 'patient:dashboard' %}" class="sidebar-link {% if url_name == 'dashboard' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'dashboard' %}filled{% endif %}">home</span><span>Home</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'patient:ai_assistant' %}" class="sidebar-link {% if url_name == 'ai_assistant' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'ai_assistant' %}filled{% endif %}">smart_toy</span><span>AI Assistant</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'patient:find_doctor' %}" class="sidebar-link {% if url_name == 'find_doctor' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'find_doctor' %}filled{% endif %}">search</span><span>Find a Doctor</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'patient:appointments' %}" class="sidebar-link {% if url_name == 'appointments' or url_name == 'appointment_detail' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'appointments' or url_name == 'appointment_detail' %}filled{% endif %}">calendar_month</span><span>My Appointments</span>
+        </a>
+      </div>
+      <div class="mb-1">
+        <a href="{% url 'patient:profile' %}" class="sidebar-link {% if url_name == 'profile' %}active{% endif %}">
+          <span class="material-symbols-rounded {% if url_name == 'profile' %}filled{% endif %}">person</span><span>Profile</span>
+        </a>
+      </div>
+
+      <div class="my-4 border-t border-neutral-90"></div>
+
+      <a href="{% url 'patient:triage' %}"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl bg-error-light text-error font-semibold text-label-lg hover:bg-red-100 transition-colors">
+        <span class="material-symbols-rounded filled" style="font-size:20px;">emergency</span>
+        <span>Emergency Triage</span>
+      </a>
+      {% endif %}
+
+      {% endwith %}
+      {% endblock sidebar_nav %}
+    </nav>
+
+
+    <div class="shrink-0 border-t border-neutral-90 px-3 py-4 space-y-1">
+      {% if not request.user.is_doctor and not request.user.is_admin_user %}
+      <a href="{% url 'patient:help' %}" class="sidebar-link {% if request.resolver_match.url_name == 'help' %}active{% endif %}">
+        <span class="material-symbols-rounded">help</span>
+        <span>Help Center</span>
+      </a>
+      {% endif %}
+      <form method="post" action="{% url 'accounts:logout' %}" id="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="sidebar-link w-full text-left text-neutral-40 hover:text-error hover:bg-error-light">
+          <span class="material-symbols-rounded">logout</span>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
+
+
+    <div class="shrink-0 border-t border-neutral-90 px-4 py-3 flex items-center gap-3 bg-surface">
+      <div class="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center shrink-0">
+        {% if request.user.avatar %}
+          <img src="{{ request.user.avatar.url }}" alt="" class="w-9 h-9 rounded-full object-cover" />
+        {% else %}
+          <span class="material-symbols-rounded filled text-primary" style="font-size:20px;">person</span>
+        {% endif %}
+      </div>
+      <div class="min-w-0">
+        <p class="text-label-lg text-neutral-10 font-semibold truncate">{{ request.user.get_full_name|default:request.user.email }}</p>
+        <p class="text-label-md text-neutral-50 truncate capitalize">{{ request.user.role }}</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <header class="fixed top-0 left-64 right-0 h-20 bg-white border-b border-neutral-90 flex items-center px-gutter gap-4 z-20">
+
+
+    <div class="flex-1 max-w-lg">
+      {% block header_search %}
+      <div class="relative">
+        <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-neutral-50" style="font-size:20px;">search</span>
+        <input type="search" placeholder="Search doctors, specialties…"
+               class="w-full pl-10 pr-4 py-2.5 rounded-full bg-surface border border-neutral-90 text-body-md text-neutral-10 placeholder-neutral-50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" />
+      </div>
+      {% endblock %}
+    </div>
+
+    <div class="flex items-center gap-2 ml-auto">
+
+      <button class="relative w-10 h-10 rounded-full hover:bg-neutral-95 flex items-center justify-center transition-colors" aria-label="Notifications">
+        <span class="material-symbols-rounded text-neutral-40">notifications</span>
+        {% if unread_notifications_count %}
+        <span class="absolute top-1.5 right-1.5 w-4 h-4 bg-error rounded-full flex items-center justify-center">
+          <span class="text-white text-[10px] font-bold">{{ unread_notifications_count }}</span>
+        </span>
+        {% endif %}
+      </button>
+
+      
+      {% block header_badge %}
+      <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-light border border-primary/20">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:16px;">badge</span>
+        <span class="text-label-md text-primary font-semibold capitalize">
+          {% if request.user.is_doctor %}Doctor{% elif request.user.is_admin_user %}Admin{% else %}ID #{{ request.user.id }}{% endif %}
+        </span>
+      </div>
+      {% endblock %}
+
+      {% block header_actions %}{% endblock %}
+    </div>
+  </header>
+  <main class="ml-64 pt-20 min-h-full">
+    <div class="p-gutter">
+
+      {% if messages %}
+      <div class="mb-6 space-y-2" id="django-messages">
+        {% for message in messages %}
+        <div class="flex items-start gap-3 px-4 py-3 rounded-xl border
+                    {% if message.tags == 'error' %}bg-error-light border-error/30 text-error
+                    {% elif message.tags == 'success' %}bg-secondary-light border-secondary/30 text-secondary-dark
+                    {% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800
+                    {% else %}bg-primary-light border-primary/20 text-primary{% endif %}">
+          <span class="material-symbols-rounded filled shrink-0" style="font-size:20px;">
+            {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}check_circle{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}
+          </span>
+          <p class="text-body-md">{{ message }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+
+    </div>
+  </main>
+
+</div>
+
+<style>
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #444748;
+    text-decoration: none;
+    transition: background-color 0.15s, color 0.15s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+  }
+  .sidebar-link:hover { background-color: #f0f1f2; color: #1a1c1e; }
+  .sidebar-link.active { background-color: #d6e4ff; color: #003c90; font-weight: 600; }
+  .sidebar-link.active .material-symbols-rounded { color: #003c90; }
+</style>
+
+{% block extra_js %}
+{% block page_js %}{% endblock %}
+{% endblock %}
+{% endblock %}

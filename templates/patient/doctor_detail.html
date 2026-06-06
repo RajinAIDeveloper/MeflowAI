@@ -1,0 +1,131 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Dr. {{ doctor.user.get_full_name }} — MediFlow AI{% endblock %}
+
+{% block content %}
+<a href="{% url 'patient:find_doctor' %}" class="inline-flex items-center gap-2 text-label-lg text-neutral-40 hover:text-primary transition-colors mb-6">
+  <span class="material-symbols-rounded" style="font-size:18px;">arrow_back</span>
+  Back to results
+</a>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  {# ── Profile card ── #}
+  <div class="lg:col-span-1 space-y-4">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6 text-center">
+      <div class="w-24 h-24 rounded-2xl bg-primary-light flex items-center justify-center mx-auto mb-4">
+        {% if doctor.user.avatar %}
+        <img src="{{ doctor.user.avatar.url }}" alt="" class="w-24 h-24 rounded-2xl object-cover" />
+        {% else %}
+        <span class="material-symbols-rounded filled text-primary" style="font-size:44px;">person</span>
+        {% endif %}
+      </div>
+      <h1 class="font-headline text-headline-sm text-neutral-10 mb-1">Dr. {{ doctor.user.get_full_name }}</h1>
+      <p class="text-body-md text-neutral-50 mb-2">{{ doctor.specialty.name }}</p>
+      {% if doctor.is_available %}
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-light text-secondary-dark text-label-md font-semibold">
+        <span class="w-2 h-2 rounded-full bg-secondary"></span>Available for booking
+      </span>
+      {% else %}
+      <span class="inline-flex px-3 py-1 rounded-full bg-neutral-90 text-neutral-50 text-label-md">Currently unavailable</span>
+      {% endif %}
+
+      <div class="grid grid-cols-3 gap-2 mt-5 pt-5 border-t border-neutral-90 text-center">
+        <div>
+          <p class="font-headline text-title-lg font-bold text-neutral-10">{{ doctor.years_experience }}</p>
+          <p class="text-label-md text-neutral-50">Years</p>
+        </div>
+        <div>
+          <div class="flex items-center justify-center gap-1">
+            <span class="material-symbols-rounded filled text-yellow-400" style="font-size:16px;">star</span>
+            <p class="font-headline text-title-lg font-bold text-neutral-10">{{ doctor.rating }}</p>
+          </div>
+          <p class="text-label-md text-neutral-50">Rating</p>
+        </div>
+        <div>
+          <p class="font-headline text-title-lg font-bold text-neutral-10">{{ doctor.total_reviews }}</p>
+          <p class="text-label-md text-neutral-50">Reviews</p>
+        </div>
+      </div>
+
+      {% if doctor.is_available %}
+      <a href="{% url 'patient:book_appointment' doctor.pk %}"
+         class="mt-5 flex items-center justify-center gap-2 w-full py-3 bg-primary text-white rounded-xl font-semibold text-label-lg hover:bg-primary-dark transition-colors">
+        <span class="material-symbols-rounded filled" style="font-size:18px;">calendar_add_on</span>
+        Book Appointment
+      </a>
+      {% endif %}
+    </div>
+
+    {# Info card #}
+    <div class="bg-white rounded-2xl border border-neutral-90 p-5 space-y-3">
+      {% if doctor.hospital %}
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">local_hospital</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Hospital</p>
+          <p class="text-body-md text-neutral-10">{{ doctor.hospital }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if doctor.location %}
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">location_on</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Location</p>
+          <p class="text-body-md text-neutral-10">{{ doctor.location }}</p>
+        </div>
+      </div>
+      {% endif %}
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">payments</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Consultation fee</p>
+          <p class="text-body-md text-neutral-10">${{ doctor.consultation_fee }}</p>
+        </div>
+      </div>
+      {% if doctor.languages %}
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-rounded filled text-primary mt-0.5" style="font-size:20px;">translate</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Languages</p>
+          <p class="text-body-md text-neutral-10">{{ doctor.languages }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Detail panes ── #}
+  <div class="lg:col-span-2 space-y-4">
+
+    {# Bio #}
+    {% if doctor.bio %}
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-3">About</h2>
+      <p class="text-body-md text-neutral-40 leading-relaxed">{{ doctor.bio }}</p>
+    </div>
+    {% endif %}
+
+    {# Availability #}
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-4">Weekly Availability</h2>
+      {% if slots %}
+      <div class="space-y-2">
+        {% for slot in slots %}
+        <div class="flex items-center gap-4 py-2 px-4 rounded-xl bg-surface">
+          <span class="text-label-lg text-neutral-10 font-semibold w-28">{{ slot.get_day_of_week_display }}</span>
+          <span class="material-symbols-rounded text-secondary" style="font-size:18px;">schedule</span>
+          <span class="text-body-md text-neutral-40">{{ slot.start_time|time:"g:i A" }} – {{ slot.end_time|time:"g:i A" }}</span>
+          <span class="ml-auto text-label-md text-neutral-50">{{ slot.slot_duration_minutes }} min slots</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-body-md text-neutral-50">No availability information.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

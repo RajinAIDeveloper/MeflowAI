@@ -1,0 +1,257 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}AI Triage — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <div class="text-center mb-8">
+    <div class="w-16 h-16 rounded-2xl bg-error-light flex items-center justify-center mx-auto mb-4">
+      <span class="material-symbols-rounded filled text-error" style="font-size:32px;">emergency</span>
+    </div>
+    <h1 class="font-headline text-headline-md text-neutral-10 mb-2">AI Symptom Triage</h1>
+    <p class="text-body-md text-neutral-50 max-w-md mx-auto">
+      Describe your symptoms and our AI will assess severity and recommend the right care pathway.
+    </p>
+    <div class="mt-3 px-4 py-2 rounded-full bg-yellow-50 border border-yellow-200 inline-flex items-center gap-2">
+      <span class="material-symbols-rounded filled text-yellow-600" style="font-size:16px;">warning</span>
+      <span class="text-label-md text-yellow-700">For emergencies call 911 immediately</span>
+    </div>
+  </div>
+
+  {# ── Symptom form ── #}
+  <div id="triage-form-section" class="bg-white rounded-2xl border border-neutral-90 p-6 mb-6">
+    <form id="triage-form">
+      <label for="symptoms" class="block text-label-lg text-neutral-20 mb-2">Describe your symptoms</label>
+      <textarea id="symptoms" name="symptoms" rows="5" required
+                placeholder="e.g. I have had a severe headache for 2 days with a high fever and sensitivity to light…"
+                class="w-full px-4 py-3 rounded-xl border border-neutral-80 bg-surface text-body-md text-neutral-10
+                       placeholder-neutral-50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
+                       transition-colors resize-none"></textarea>
+
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-label-md text-neutral-50 mb-1">Duration</label>
+          <select name="duration"
+                  class="w-full px-4 py-2.5 rounded-xl border border-neutral-80 bg-white text-body-md text-neutral-10 focus:outline-none focus:border-primary transition-colors">
+            <option value="">Select…</option>
+            <option>Less than 24 hours</option>
+            <option>1–3 days</option>
+            <option>3–7 days</option>
+            <option>More than a week</option>
+            <option>Chronic / ongoing</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-label-md text-neutral-50 mb-1">Severity (1–10)</label>
+          <input type="range" id="severity-slider" name="severity" min="1" max="10" value="5"
+                 class="w-full mt-2 accent-primary" />
+          <div class="flex justify-between text-label-md text-neutral-50 mt-1">
+            <span>Mild</span>
+            <span id="severity-val" class="text-primary font-semibold">5</span>
+            <span>Severe</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="form-error hidden mt-4 px-4 py-3 rounded-xl bg-error-light text-error text-body-md" id="form-error"></p>
+
+      <button type="submit" id="triage-btn"
+              class="mt-5 w-full flex items-center justify-center gap-2 py-3.5 bg-error text-white rounded-xl font-semibold text-label-lg hover:bg-red-700 transition-colors">
+        <span id="btn-label" class="flex items-center gap-2">
+          <span class="material-symbols-rounded filled" style="font-size:18px;">emergency</span>
+          Assess My Symptoms
+        </span>
+        <span id="btn-spinner" class="hidden">
+          <span class="material-symbols-rounded animate-spin" style="font-size:20px;">progress_activity</span>
+          Analyzing…
+        </span>
+      </button>
+    </form>
+  </div>
+
+
+  <div id="triage-results" class="hidden space-y-4">
+
+  
+    <div id="severity-card" class="rounded-2xl p-6 border">
+      <div class="flex items-center gap-4">
+        <div id="severity-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center">
+          <span class="material-symbols-rounded filled" style="font-size:28px;"></span>
+        </div>
+        <div>
+          <p class="text-label-md text-neutral-50 mb-0.5">Assessed severity</p>
+          <h2 id="severity-label" class="font-headline text-headline-sm"></h2>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+          <span class="material-symbols-rounded filled text-white" style="font-size:16px;">smart_toy</span>
+        </div>
+        <p class="text-label-lg font-semibold text-neutral-10">MediFlow AI Assessment</p>
+      </div>
+      <div id="ai-response" class="text-body-md text-neutral-40 leading-relaxed"></div>
+    </div>
+
+  
+    <div id="doctors-card" class="bg-white rounded-2xl border border-neutral-90 p-6 hidden">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:22px;">stethoscope</span>
+        <h3 class="font-headline text-title-lg text-neutral-10">Recommended Doctors</h3>
+      </div>
+      <div id="doctors-list" class="divide-y divide-neutral-90"></div>
+    </div>
+
+
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h3 class="font-headline text-title-lg text-neutral-10 mb-3">Recommended Action</h3>
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-rounded filled text-primary" style="font-size:22px;">local_hospital</span>
+        <div>
+          <p class="text-label-md text-neutral-50">Department</p>
+          <p id="department" class="text-body-lg text-neutral-10 font-semibold"></p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <a href="{% url 'patient:find_doctor' %}" id="find-doctor-btn"
+           class="flex-1 text-center py-2.5 rounded-xl bg-primary text-white font-semibold text-label-lg hover:bg-primary-dark transition-colors">
+          Find a Doctor
+        </a>
+        <button onclick="document.getElementById('triage-results').classList.add('hidden'); document.getElementById('triage-form-section').classList.remove('hidden');"
+                class="flex-1 py-2.5 rounded-xl border border-neutral-80 text-label-lg text-neutral-20 font-medium hover:bg-neutral-95 transition-colors">
+          Start Over
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .md > :first-child { margin-top: 0; } .md > :last-child { margin-bottom: 0; }
+  .md p { margin: 0 0 .5rem; line-height: 1.5; }
+  .md ul, .md ol { margin: .35rem 0; padding-left: 1.3rem; }
+  .md ul { list-style: disc; } .md ol { list-style: decimal; }
+  .md li { margin: .15rem 0; } .md strong { font-weight: 600; } .md em { font-style: italic; }
+  .md code { background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 5px; font-size: .85em; }
+</style>
+<script>
+  // Minimal safe markdown -> HTML (escape first, then known tags only).
+  function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function mdInline(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+?)`/g,'<code>$1</code>').replace(/(^|[^*])\*(?!\s)([^*]+?)\*(?!\*)/g,'$1<em>$2</em>');}
+  function renderMarkdown(raw){
+    const lines=escapeHtml(raw||'').split('\n'); let html='',list=null;
+    const close=()=>{if(list){html+=`</${list}>`;list=null;}};
+    for(const line of lines){const t=line.trim(); if(!t){close();continue;} let m;
+      if((m=t.match(/^[-*•]\s+(.*)$/))){if(list!=='ul'){close();html+='<ul>';list='ul';}html+=`<li>${mdInline(m[1])}</li>`;}
+      else if((m=t.match(/^(\d+)[.)]\s+(.*)$/))){if(list!=='ol'){close();html+='<ol>';list='ol';}html+=`<li>${mdInline(m[2])}</li>`;}
+      else if((m=t.match(/^#{1,6}\s+(.*)$/))){close();html+=`<p><strong>${mdInline(m[1])}</strong></p>`;}
+      else {close();html+=`<p>${mdInline(t)}</p>`;}}
+    close(); return html;
+  }
+
+  const slider = document.getElementById('severity-slider');
+  const valEl  = document.getElementById('severity-val');
+  slider.addEventListener('input', () => valEl.textContent = slider.value);
+
+  // Keys match the backend severities: low / medium / high / emergency.
+  const SEVERITY_STYLES = {
+    low:       { bg: 'bg-secondary-light', border: 'border-secondary/30', text: 'text-secondary-dark', icon: 'check_circle',   iconBg: 'bg-secondary-light', iconColor: 'text-secondary-dark', label: 'Low — Monitor at home' },
+    medium:    { bg: 'bg-yellow-50',       border: 'border-yellow-200',   text: 'text-yellow-800',     icon: 'warning',        iconBg: 'bg-yellow-100',     iconColor: 'text-yellow-700',     label: 'Medium — See a doctor soon' },
+    high:      { bg: 'bg-error-light',     border: 'border-error/30',     text: 'text-error',          icon: 'emergency',      iconBg: 'bg-error-light',     iconColor: 'text-error',          label: 'High — Seek care promptly' },
+    emergency: { bg: 'bg-error-light',     border: 'border-error',        text: 'text-error',          icon: 'emergency_home', iconBg: 'bg-error',          iconColor: 'text-white',          label: 'Emergency — Go to the ER now' },
+  };
+
+  document.getElementById('triage-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn     = document.getElementById('triage-btn');
+    const label   = document.getElementById('btn-label');
+    const spinner = document.getElementById('btn-spinner');
+    const formErr = document.getElementById('form-error');
+    const symptoms = document.getElementById('symptoms').value.trim();
+
+    if (!symptoms) {
+      formErr.textContent = 'Please describe your symptoms.';
+      formErr.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true; label.classList.add('hidden'); spinner.classList.remove('hidden');
+    formErr.classList.add('hidden');
+
+    try {
+      const res  = await API.post('/api/agents/triage/', { symptoms });
+      const data = await res.json();
+
+      if (res.ok) {
+        const s = SEVERITY_STYLES[data.severity] || SEVERITY_STYLES.medium;
+        const card = document.getElementById('severity-card');
+        card.className = `rounded-2xl p-6 border ${s.bg} ${s.border}`;
+
+        const iconWrap = document.getElementById('severity-icon');
+        iconWrap.className = `w-14 h-14 rounded-2xl flex items-center justify-center ${s.iconBg}`;
+        iconWrap.querySelector('span').textContent = s.icon;
+        iconWrap.querySelector('span').className = `material-symbols-rounded filled ${s.iconColor}`;
+
+        document.getElementById('severity-label').textContent = s.label;
+        document.getElementById('severity-label').className = `font-headline text-headline-sm ${s.text}`;
+        const aiEl = document.getElementById('ai-response');
+        aiEl.classList.add('md');
+        aiEl.innerHTML = renderMarkdown(data.response || '');
+        document.getElementById('department').textContent = data.department || 'General Practice';
+
+        // Recommended doctors (vector-search results)
+        const docCard = document.getElementById('doctors-card');
+        const docList = document.getElementById('doctors-list');
+        const docs = data.recommended_doctors || [];
+        if (docs.length) {
+          docList.innerHTML = docs.map(d => {
+            const m = d.metadata || {};
+            const id = m.doctor_id;
+            const spec = m.specialty || '';
+            const hospital = m.hospital || '';
+            const link = id ? `/doctors/${id}/` : `{% url 'patient:find_doctor' %}`;
+            return `<div class="flex items-center gap-3 py-3">
+              <div class="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center shrink-0">
+                <span class="material-symbols-rounded filled text-primary" style="font-size:20px;">person</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-body-md font-semibold text-neutral-10 truncate">${d.title}</p>
+                <p class="text-label-md text-neutral-50 truncate">${spec}${hospital ? ' · ' + hospital : ''}</p>
+              </div>
+              <a href="${link}" class="px-3 py-1.5 rounded-lg bg-primary text-white text-label-md font-semibold hover:bg-primary-dark transition-colors shrink-0">View</a>
+            </div>`;
+          }).join('');
+          docCard.classList.remove('hidden');
+        } else {
+          docCard.classList.add('hidden');
+        }
+
+        // Update find-doctor link with specialty filter
+        if (data.department) {
+          document.getElementById('find-doctor-btn').href = `{% url 'patient:find_doctor' %}?specialty=${encodeURIComponent(data.department)}`;
+        }
+
+        document.getElementById('triage-form-section').classList.add('hidden');
+        document.getElementById('triage-results').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        formErr.textContent = data.detail || 'Triage failed. Please try again.';
+        formErr.classList.remove('hidden');
+      }
+    } catch {
+      formErr.textContent = 'Network error. Please try again.';
+      formErr.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; label.classList.remove('hidden'); spinner.classList.add('hidden');
+    }
+  });
+</script>
+{% endblock %}

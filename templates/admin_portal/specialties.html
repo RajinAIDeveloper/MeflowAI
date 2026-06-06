@@ -1,0 +1,76 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Specialties — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Specialties</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Medical specialties available for doctors and search.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6 sticky top-28">
+      <h2 class="font-headline text-title-lg text-neutral-10 mb-4">Add specialty</h2>
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add" />
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Name</label>
+          <input type="text" name="name" required class="spec-input" placeholder="Cardiology" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Icon (Material Symbol)</label>
+          <input type="text" name="icon" class="spec-input" placeholder="cardiology" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Description</label>
+          <textarea name="description" rows="3" class="spec-input resize-none"></textarea>
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">Add specialty</button>
+      </form>
+    </div>
+  </div>
+
+  
+  <div class="lg:col-span-2">
+    {% if specialties %}
+    <div class="bg-white rounded-2xl border border-neutral-90 overflow-hidden divide-y divide-neutral-90">
+      {% for spec in specialties %}
+      <div class="flex items-center gap-4 px-6 py-4">
+        <div class="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
+          <span class="material-symbols-rounded filled text-primary" style="font-size:20px;">{{ spec.icon|default:"medical_services" }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-body-md font-semibold text-neutral-10">{{ spec.name }}</p>
+          {% if spec.description %}<p class="text-label-md text-neutral-50 truncate">{{ spec.description }}</p>{% endif %}
+        </div>
+        <span class="text-label-md text-neutral-50">{{ spec.doctor_count }} doctor{{ spec.doctor_count|pluralize }}</span>
+        <form method="post" onsubmit="return confirm('Delete this specialty? Doctors keep their record but lose this tag.');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete" />
+          <input type="hidden" name="specialty_id" value="{{ spec.id }}" />
+          <button type="submit" class="w-9 h-9 rounded-lg text-neutral-50 hover:text-error hover:bg-error-light flex items-center justify-center transition-colors" aria-label="Delete">
+            <span class="material-symbols-rounded" style="font-size:20px;">delete</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-neutral-90 flex flex-col items-center justify-center py-16 text-center">
+      <span class="material-symbols-rounded text-neutral-80 mb-3" style="font-size:48px;">medical_services</span>
+      <p class="text-body-md text-neutral-50">No specialties yet. Add the first one.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .spec-input { display:block;width:100%;padding:10px 14px;border:1.5px solid #c4c7c8;border-radius:10px;font-size:.875rem;color:#1a1c1e;background:#fff;outline:none; }
+  .spec-input:focus { border-color:#003c90;box-shadow:0 0 0 3px rgba(0,60,144,.12); }
+</style>
+{% endblock %}

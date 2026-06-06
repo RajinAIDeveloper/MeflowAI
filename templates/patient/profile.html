@@ -1,0 +1,182 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Profile — MediFlow AI{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-headline text-headline-md text-neutral-10">Profile</h1>
+  <p class="text-body-md text-neutral-50 mt-1">Manage your personal information and preferences.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6 text-center">
+      <div class="relative inline-block mb-4">
+        <div class="w-24 h-24 rounded-2xl bg-primary-light flex items-center justify-center mx-auto">
+          {% if request.user.avatar %}
+          <img src="{{ request.user.avatar.url }}" alt="" id="avatar-preview" class="w-24 h-24 rounded-2xl object-cover" />
+          {% else %}
+          <span class="material-symbols-rounded filled text-primary" style="font-size:44px;">person</span>
+          {% endif %}
+        </div>
+      </div>
+      <h2 class="font-headline text-title-lg text-neutral-10 font-semibold">{{ request.user.get_full_name|default:request.user.email }}</h2>
+      <p class="text-label-lg text-neutral-50 capitalize">{{ request.user.role }}</p>
+      <p class="text-label-md text-neutral-50 mt-1">Patient ID #{{ request.user.id }}</p>
+      <p class="text-label-md text-neutral-50">Member since {{ request.user.date_joined|date:"M Y" }}</p>
+    </div>
+  </div>
+
+ 
+  <div class="lg:col-span-2 space-y-4">
+
+    
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h3 class="font-headline text-title-lg text-neutral-10 mb-5">Personal Information</h3>
+      <form id="personal-form" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">First name</label>
+            <input type="text" name="first_name" value="{{ request.user.first_name }}" class="profile-input" />
+          </div>
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">Last name</label>
+            <input type="text" name="last_name" value="{{ request.user.last_name }}" class="profile-input" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Email address</label>
+          <input type="email" name="email" value="{{ request.user.email }}" class="profile-input" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">Phone number</label>
+            <input type="tel" name="phone" value="{{ request.user.phone|default:'' }}" class="profile-input" placeholder="+1 555 000 0000" />
+          </div>
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">Date of birth</label>
+            <input type="date" name="date_of_birth" value="{{ request.user.date_of_birth|date:'Y-m-d'|default:'' }}" class="profile-input" />
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-2">
+          <p class="hidden text-label-md text-secondary-dark" id="personal-success">
+            <span class="material-symbols-rounded filled" style="font-size:16px;">check_circle</span> Saved successfully
+          </p>
+          <p class="hidden text-label-md text-error" id="personal-error"></p>
+          <button type="submit" class="ml-auto px-5 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+            Save changes
+          </button>
+        </div>
+      </form>
+    </div>
+
+    
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h3 class="font-headline text-title-lg text-neutral-10 mb-5">Care Preferences</h3>
+      <form id="prefs-form" class="space-y-4">
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Preferred language</label>
+          <input type="text" name="preferred_language" value="{{ patient_memory.preferred_language|default:'' }}" class="profile-input" placeholder="English" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Preferred hospital</label>
+          <input type="text" name="preferred_hospital" value="{{ patient_memory.preferred_hospital|default:'' }}" class="profile-input" placeholder="e.g. City General Hospital" />
+        </div>
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Notes for AI assistant</label>
+          <textarea name="notes" rows="3" class="profile-input resize-none" placeholder="e.g. allergic to penicillin, prefer morning appointments…">{{ patient_memory.notes|default:'' }}</textarea>
+        </div>
+        <div class="flex items-center justify-between pt-2">
+          <p class="hidden text-label-md text-secondary-dark" id="prefs-success">
+            <span class="material-symbols-rounded filled" style="font-size:16px;">check_circle</span> Saved
+          </p>
+          <p class="hidden text-label-md text-error" id="prefs-error"></p>
+          <button type="submit" class="ml-auto px-5 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+            Save preferences
+          </button>
+        </div>
+      </form>
+    </div>
+
+   
+    <div class="bg-white rounded-2xl border border-neutral-90 p-6">
+      <h3 class="font-headline text-title-lg text-neutral-10 mb-5">Security</h3>
+      <form id="password-form" class="space-y-4">
+        <div>
+          <label class="block text-label-lg text-neutral-20 mb-1.5">Current password</label>
+          <input type="password" name="old_password" class="profile-input" autocomplete="current-password" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">New password</label>
+            <input type="password" name="new_password1" class="profile-input" autocomplete="new-password" />
+          </div>
+          <div>
+            <label class="block text-label-lg text-neutral-20 mb-1.5">Confirm new password</label>
+            <input type="password" name="new_password2" class="profile-input" autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-2">
+          <p class="hidden text-label-md text-secondary-dark" id="pw-success">Password updated</p>
+          <p class="hidden text-label-md text-error" id="pw-error"></p>
+          <button type="submit" class="ml-auto px-5 py-2.5 bg-primary text-white rounded-xl text-label-lg font-semibold hover:bg-primary-dark transition-colors">
+            Change password
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<style>
+  .profile-input {
+    display: block; width: 100%; padding: 10px 16px;
+    border: 1.5px solid #c4c7c8; border-radius: 10px;
+    font-size: 0.875rem; color: #1a1c1e; background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s; outline: none;
+  }
+  .profile-input:focus { border-color: #003c90; box-shadow: 0 0 0 3px rgba(0,60,144,0.12); }
+</style>
+<script>
+  function showMsg(successId, errorId, ok, msg) {
+    const s = document.getElementById(successId);
+    const e = document.getElementById(errorId);
+    if (ok) { s.classList.remove('hidden'); e.classList.add('hidden'); setTimeout(() => s.classList.add('hidden'), 3000); }
+    else { e.textContent = msg; e.classList.remove('hidden'); s.classList.add('hidden'); }
+  }
+
+  document.getElementById('personal-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const fd = new FormData(ev.target);
+    const payload = Object.fromEntries(fd.entries());
+    const res  = await API.patch('/api/auth/me/', payload);
+    const data = await res.json();
+    showMsg('personal-success', 'personal-error', res.ok, data.detail || Object.values(data)[0]?.[0] || 'Update failed.');
+  });
+
+  document.getElementById('prefs-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const fd = new FormData(ev.target);
+    const payload = Object.fromEntries(fd.entries());
+    const res  = await API.patch('/api/auth/me/memory/', payload);
+    const data = await res.json();
+    showMsg('prefs-success', 'prefs-error', res.ok, data.detail || 'Update failed.');
+  });
+
+  document.getElementById('password-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const fd = new FormData(ev.target);
+    const p1 = fd.get('new_password1'), p2 = fd.get('new_password2');
+    if (p1 !== p2) { showMsg('pw-success', 'pw-error', false, 'Passwords do not match.'); return; }
+    const res  = await API.post('/api/auth/change-password/', { old_password: fd.get('old_password'), new_password: p1 });
+    const data = await res.json();
+    showMsg('pw-success', 'pw-error', res.ok, data.detail || 'Could not update password.');
+    if (res.ok) ev.target.reset();
+  });
+</script>
+{% endblock %}
