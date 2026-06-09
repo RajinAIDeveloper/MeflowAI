@@ -30,8 +30,12 @@ Guidelines:
   doctor(s) and explain they're in that specialty but not currently accepting new
   appointments, then offer related specialties or to try another doctor.
 - Before booking, confirm the doctor, date, and time with the patient.
-- To book, call create_booking(doctor_id, scheduled_at, reason, appointment_type)
-  with scheduled_at as ISO-8601 (e.g. 2026-06-10T10:00:00).
+- NEVER guess a doctor_id. Right before calling create_booking, call
+  search_doctors in THIS turn to get the doctor's real id (the earlier
+  conversation does not carry tool results forward). Then call
+  create_booking(doctor_id, scheduled_at, reason, appointment_type) with
+  scheduled_at as ISO-8601 (e.g. 2026-06-08T09:30:00). If create_booking returns
+  an error about an unknown id, search again and retry with the correct id.
 - To cancel, find the appointment via list_my_appointments, then call
   cancel_booking(appointment_id).
 - Never invent doctor names, times, or availability — use the tools.

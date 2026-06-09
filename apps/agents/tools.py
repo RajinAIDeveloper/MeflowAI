@@ -139,24 +139,43 @@ def make_patient_tools(patient_id: int):
         appointment_type: str = 'in_person',
     ) -> dict:
         """
-        Book an appointment for the current patient. scheduled_at must be ISO-8601
-        (e.g. 2025-09-01T10:00:00). Returns the new appointment id and status.
+        Book an appointment for the current patient. `doctor_id` MUST be a real id
+        from a search_doctors result (never guess it). scheduled_at must be ISO-8601
+        (e.g. 2026-09-01T10:00:00). Returns the new appointment id and status.
         """
+        from django.utils import timezone
         from django.utils.dateparse import parse_datetime
+        from apps.doctors.models import Doctor
         from apps.appointments.models import Appointment
+
+        # Guard against a guessed/stale id — guide the agent to re-search instead
+        # of raising a foreign-key error.
+        if not Doctor.objects.filter(pk=doctor_id).exists():
+            return {'error': f'No doctor with id {doctor_id}. Call search_doctors '
+                             f'to get the correct doctor id, then retry create_booking.'}
 
         dt = parse_datetime(scheduled_at)
         if dt is None:
-            return {'error': 'Invalid datetime format.'}
+            return {'error': 'Invalid datetime. Use ISO-8601, e.g. 2026-06-08T09:30:00.'}
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, timezone.get_current_timezone())
 
-        appointment = Appointment.objects.create(
-            patient_id=patient_id,
-            doctor_id=doctor_id,
-            scheduled_at=dt,
-            reason=reason,
-            appointment_type=appointment_type,
-        )
-        return {'appointment_id': appointment.pk, 'status': appointment.status}
+        try:
+            appointment = Appointment.objects.create(
+                patient_id=patient_id,
+                doctor_id=doctor_id,
+                scheduled_at=dt,
+                reason=reason,
+                appointment_type=appointment_type,
+            )
+        except Exception as exc:  # never bubble a DB error up as a 500
+            return {'error': f'Could not create appointment: {exc}'}
+
+        return {
+            'appointment_id': appointment.pk,
+            'status': appointment.status,
+            'scheduled_at': dt.strftime('%Y-%m-%d %H:%M'),
+        }
 
     @tool
     def cancel_booking(appointment_id: int) -> dict:
